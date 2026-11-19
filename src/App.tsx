@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router'
 import { RequireAccess } from '@/auth/RequireAccess'
+import { RequireNation } from '@/auth/RequireNation'
 import { FoundNationPage } from '@/pages/FoundNationPage'
 import { ComingSoon } from '@/pages/ComingSoon'
 import { DashboardPage } from '@/pages/Dashboard'
@@ -13,15 +14,19 @@ export function App() {
   return (
     <Routes>
       <Route element={<RequireAccess />}>
-        <Route element={<AppShell />}>
+        <Route path="criar-pais" element={<RequireNation mode="founding" />}>
+          <Route index element={<FoundNationPage />} />
+        </Route>
+        <Route element={<RequireNation mode="game" />}>
+          <Route element={<AppShell />}>
           <Route index element={<DashboardPage />} />
           <Route path="mapa" element={<WorldMapPage />} />
           <Route path="governo" element={<GovernmentPage />} />
           <Route path="teste-quiz" element={<QuizPreviewPage />} />
+          </Route>
         </Route>
       </Route>
       <Route path="login" element={<LoginPage />} />
-      <Route path="criar-pais" element={<FoundNationPage />} />
       <Route
         path="*"
         element={
