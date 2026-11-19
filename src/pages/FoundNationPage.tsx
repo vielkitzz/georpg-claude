@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router'
+import { getSupabase } from '@/auth/supabase'
 import { TerritoryPicker } from './TerritoryPicker'
 import { Link } from 'react-router'
 import { composeOfficialCountryName, validateShortName, type Article } from '@/domain/founding/name'
@@ -32,7 +34,10 @@ function Choice<T extends string>({ label, value, values, names, onChange }: {
 }
 
 export function FoundNationPage() {
+  const navigate = useNavigate()
   const [step, setStep] = useState(0)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [shortName, setShortName] = useState('')
   const [article, setArticle] = useState<Article>('de')
   const [territoryId, setTerritoryId] = useState<number | null>(null)
@@ -62,6 +67,35 @@ export function FoundNationPage() {
     capital.trim().length >= 2, quizFinished && !!ideology, false,
   ][step]
   const scores = quizFinished ? scoreQuiz(answers) : null
+  const submit = async () => {
+    if (saving || !territoryAvailable || territoryId === null || !quizFinished || !ideology) return
+    const client = getSupabase()
+    if (!client) { setSaveError('Supabase não configurado.'); return }
+    setSaving(true)
+    setSaveError(null)
+    try {
+      const institutions = {
+        governmentForm, regime, system, stateForm, firstLevel, secondLevel, localSelection,
+        leadershipBasis,
+        headOfState: { title: governmentForm === 'monarquia' ? 'Monarca' : 'Presidente', name: headOfState.trim() },
+        ...(needsGovernmentHead ? { headOfGovernment: { title: 'Primeiro-ministro', name: headOfGovernment.trim() } } : {}),
+      }
+      const { data, error } = await client.functions.invoke('found-nation', {
+        body: { shortName, article, territoryId, capital, motto, institutions, answers, ideology },
+      })
+      if (error || !data?.nationId) {
+        const context = error && 'context' in error ? error.context : null
+        const response = context instanceof Response ? await context.json().catch(() => null) : null
+        setSaveError(response?.error ?? data?.error ?? 'Falha ao criar nação. Tente novamente.')
+        return
+      }
+      navigate('/', { replace: true })
+    } catch {
+      setSaveError('Não foi possível conectar ao servidor.')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return <main className="mx-auto min-h-dvh max-w-3xl space-y-6 px-4 py-10 text-foreground">
     <div className="flex items-center justify-between gap-4">
@@ -105,7 +139,9 @@ export function FoundNationPage() {
         <p><strong>País:</strong> {officialName}</p><p><strong>Capital:</strong> {capital}</p>
         <p><strong>Governo:</strong> {LABELS.governmentForm[governmentForm]}, {LABELS.regime[regime]}</p>
         <p><strong>Território:</strong> {territoryId ?? "não selecionado"}</p>
-        <p className="text-amber-400">Fundação indisponível: aguardando integração segura com o mapa e o Supabase.</p>
+        <p className="text-sm text-muted">Ao confirmar, a nação e a posse do território serão registradas no servidor.</p>
+        {saveError && <p role="alert" className="text-warning">{saveError}</p>}
+        <button type="button" className={buttonClass} disabled={saving || !territoryAvailable} onClick={submit}>{saving ? 'Fundando…' : 'Fundar minha nação'}</button>
       </div>}
     </section>
     <div className="flex justify-between gap-4">
