@@ -1,6 +1,9 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, Outlet } from 'react-router'
+
+// Route integration tests use demo data; nation authorization is tested separately.
+vi.mock('./auth/RequireNation', () => ({ RequireNation: () => <Outlet /> }))
 import { App } from './App'
 import type { AuthValue } from './auth/AuthContext'
 import { RepositoryProvider } from './data/RepositoryProvider'
