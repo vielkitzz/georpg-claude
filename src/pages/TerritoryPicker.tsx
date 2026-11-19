@@ -12,13 +12,13 @@ export function TerritoryPicker({ selectedId, onSelect, onAvailability }: {
   onSelect: (id: number | null) => void
   onAvailability: (available: boolean) => void
 }) {
-  const [status, setStatus] = useState<Status>('loading')
+  const [status, setStatus] = useState<Status>(() => getSupabase() ? 'loading' : 'error')
   const [claims, setClaims] = useState<TerritoryClaim[]>([])
   const [retry, setRetry] = useState(0)
 
   useEffect(() => {
     const client = getSupabase()
-    if (!client) { setStatus('error'); return }
+    if (!client) return
     let active = true
     client.from('territory_claims').select('territory_id,nation_id,name,color').then(({ data, error }) => {
       if (!active) return
