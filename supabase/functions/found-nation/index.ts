@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { pickDiscordProfile } from '../discord-guild/logic.ts'
 import { validateNationName } from '../../../src/domain/founding/name.ts'
 import {
   validateInstitutions, localSelectionLegitimacy,
@@ -43,18 +44,18 @@ Deno.serve(async request => {
   const admin = createClient(url, key, { auth: { persistSession: false } })
   const { data: auth, error: authError } = await admin.auth.getUser(jwt)
   if (authError || !auth.user) return respond(401, { error: 'Sessão inválida.' })
-  const identity = auth.user.identities?.find(item => item.provider === 'discord')
-  if (!identity?.id) return respond(403, { error: 'É necessário entrar com Discord.' })
+  const profile = pickDiscordProfile(auth.user.identities)
+  if (!profile) return respond(403, { error: 'É necessário entrar com Discord.' })
 
   const { data: player, error: playerError } = await admin.from('users')
     .select('banned,discord_id').eq('id', auth.user.id).maybeSingle()
-  if (playerError || !player || player.banned || player.discord_id !== String(identity.id))
+  if (playerError || !player || player.banned || player.discord_id !== profile.discordId)
     return respond(403, { error: 'Jogador não autorizado.' })
 
   // Recheck guild membership at the time of the sensitive operation.
   let member: Response
   try {
-    member = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${identity.id}`, {
+    member = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${profile.discordId}`, {
       headers: { Authorization: `Bot ${botToken}` },
       signal: AbortSignal.timeout(8000),
     })
