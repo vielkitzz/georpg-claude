@@ -212,3 +212,23 @@ it('exibe conflito do servidor ao validar nome e mantém a etapa para correção
   stage(2, 'Nome curto e artigo')
   expect(screen.getByLabelText('Nome curto')).toHaveAttribute('aria-invalid', 'true')
 })
+
+it('identifica a resposta da Edge Function antiga sem culpar o preenchimento', async () => {
+  renderWizard()
+  const territory = await screen.findByRole('combobox', { name: 'Escolher território' })
+  fireEvent.change(territory, { target: { value: '1' } })
+  next()
+  textField('Nome curto', 'Aurora')
+  invoke.mockResolvedValueOnce({
+    error: {
+      context: new Response(JSON.stringify({ error: 'Preencha todos os campos corretamente.' }), {
+        status: 400,
+      }),
+    },
+  })
+  next()
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'O servidor de fundação precisa ser atualizado para aceitar este formulário.',
+  )
+  expect(screen.getByLabelText('Nome curto')).toHaveValue('Aurora')
+})
