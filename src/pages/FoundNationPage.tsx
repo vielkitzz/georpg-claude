@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { TerritoryPicker } from './TerritoryPicker'
 import { Link } from 'react-router'
 import { composeOfficialCountryName, validateShortName, type Article } from '@/domain/founding/name'
 import {
@@ -34,6 +35,8 @@ export function FoundNationPage() {
   const [step, setStep] = useState(0)
   const [shortName, setShortName] = useState('')
   const [article, setArticle] = useState<Article>('de')
+  const [territoryId, setTerritoryId] = useState<number | null>(null)
+  const [territoryAvailable, setTerritoryAvailable] = useState(false)
   const [governmentForm, setGovernmentForm] = useState<GovernmentForm>('republica')
   const [regime, setRegime] = useState<Regime>('democratico')
   const [system, setSystem] = useState<GovernmentSystem>('presidencialismo')
@@ -54,7 +57,7 @@ export function FoundNationPage() {
   const bases = validLeadershipBases(governmentForm, regime)
   const needsGovernmentHead = system === 'parlamentarismo' || system === 'semipresidencialismo'
   const valid = [
-    !validateShortName(shortName), false, true, true, true, true, true,
+    !validateShortName(shortName), territoryAvailable && territoryId !== null, true, true, true, true, true,
     headOfState.trim().length >= 2, !needsGovernmentHead || headOfGovernment.trim().length >= 2,
     capital.trim().length >= 2, quizFinished && !!ideology, false,
   ][step]
@@ -77,7 +80,7 @@ export function FoundNationPage() {
         <p className="text-sm text-muted">Nome oficial: {officialName}</p>
         {shortName && validateShortName(shortName) && <p role="alert" className="text-sm text-red-400">{validateShortName(shortName)}</p>}
       </>}
-      {step === 1 && <p className="text-muted">A seleção de território será conectada ao mapa e validada no servidor. Não é possível avançar enquanto isso não estiver pronto.</p>}
+      {step === 1 && <TerritoryPicker selectedId={territoryId} onSelect={setTerritoryId} onAvailability={setTerritoryAvailable} />}
       {step === 2 && <Choice label="Forma de governo" value={governmentForm} values={GOVERNMENT_FORMS} names={LABELS.governmentForm} onChange={v => { setGovernmentForm(v); const allowed = validSystems(v, regime); if (!allowed.includes(system)) setSystem(allowed[0]); const b = validLeadershipBases(v, regime); if (!b.includes(leadershipBasis)) setLeadershipBasis(b[0]) }} />}
       {step === 3 && <Choice label="Regime" value={regime} values={REGIMES} names={LABELS.regime} onChange={v => { setRegime(v); const allowed = validSystems(governmentForm, v); if (!allowed.includes(system)) setSystem(allowed[0]); const b = validLeadershipBases(governmentForm, v); if (!b.includes(leadershipBasis)) setLeadershipBasis(b[0]) }} />}
       {step === 4 && <Choice label="Sistema" value={system} values={systems} names={LABELS.system} onChange={setSystem} />}
@@ -101,7 +104,7 @@ export function FoundNationPage() {
       {step === 11 && <div className="space-y-2">
         <p><strong>País:</strong> {officialName}</p><p><strong>Capital:</strong> {capital}</p>
         <p><strong>Governo:</strong> {LABELS.governmentForm[governmentForm]}, {LABELS.regime[regime]}</p>
-        <p><strong>Território:</strong> ainda não selecionado</p>
+        <p><strong>Território:</strong> {territoryId ?? "não selecionado"}</p>
         <p className="text-amber-400">Fundação indisponível: aguardando integração segura com o mapa e o Supabase.</p>
       </div>}
     </section>
