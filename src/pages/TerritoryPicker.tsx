@@ -18,7 +18,7 @@ export function TerritoryPicker({ selectedId, onSelect, onAvailability }: {
 
   useEffect(() => {
     const client = getSupabase()
-    if (!client) return
+    if (!client) { setStatus('error'); return }
     let active = true
     client.from('territory_claims').select('territory_id,nation_id,name,color').then(({ data, error }) => {
       if (!active) return
