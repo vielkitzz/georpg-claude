@@ -63,7 +63,7 @@ export function FoundNationPage() {
   return <main className="mx-auto min-h-dvh max-w-3xl space-y-6 px-4 py-10 text-foreground">
     <div className="flex items-center justify-between gap-4">
       <div><p className="text-sm text-muted">GEO-RPG · Fundação de nação</p>
-        <h1 className="text-3xl font-bold uppercase">{STEPS[step]}</h1></div>
+        <h1 className="text-3xl font-bold uppercase">Fundação de nação</h1><h2 className="text-xl font-semibold">{STEPS[step]}</h2></div>
       <Link to="/login" className="text-sm underline">Voltar ao login</Link>
     </div>
     <div className="h-2 overflow-hidden rounded-full bg-line">
