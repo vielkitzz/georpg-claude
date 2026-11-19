@@ -1,0 +1,110 @@
+@import 'tailwindcss';
+
+/* Paleta oficial (seção 2). Os tokens semânticos abaixo trocam com data-theme. */
+:root {
+  --navy: #071c2a;
+  --deep: #002a45;
+  --coral: #ea444b;
+  --coral-soft: #f98b87;
+  --cream: #fefbee;
+  --green: #44ea6e;
+  --yellow: #f9d432;
+  --map-unowned: #132134;
+}
+
+:root,
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: var(--navy);
+  --panel: var(--deep);
+  --panel-raised: color-mix(in srgb, var(--deep) 82%, var(--cream));
+  --fg: var(--cream);
+  --muted: color-mix(in srgb, var(--cream) 68%, var(--navy));
+  --line: color-mix(in srgb, var(--cream) 16%, transparent);
+  --primary: var(--coral);
+  --on-primary: #05141d;
+  --primary-text: var(--coral-soft);
+  --secondary: var(--coral-soft);
+  --positive: var(--green);
+  --warning: var(--yellow);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: var(--cream);
+  --panel: color-mix(in srgb, var(--cream) 94%, var(--navy));
+  --panel-raised: color-mix(in srgb, var(--cream) 86%, var(--navy));
+  --fg: var(--navy);
+  --muted: color-mix(in srgb, var(--navy) 72%, var(--cream));
+  --line: color-mix(in srgb, var(--navy) 18%, transparent);
+  --primary: var(--coral);
+  --on-primary: #05141d;
+  --primary-text: #b3242b;
+  --secondary: #b3242b;
+  --positive: #06661f;
+  --warning: #7a5a00;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-raised: var(--panel-raised);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-primary-text: var(--primary-text);
+  --color-secondary: var(--secondary);
+  --color-positive: var(--positive);
+  --color-warning: var(--warning);
+  --font-title: 'Imbue', 'Times New Roman', serif;
+  --font-sans: 'Parkinsans', system-ui, sans-serif;
+}
+
+html {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-weight: 400;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Títulos em caixa alta: Imbue Bold/SemiBold. Subtítulos: Parkinsans SemiBold. */
+.title {
+  font-family: var(--font-title);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.05;
+}
+.title-semi {
+  font-family: var(--font-title);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+}
+.subtitle {
+  font-family: var(--font-sans);
+  font-weight: 600;
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary-text);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

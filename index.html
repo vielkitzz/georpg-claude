@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="GeoRPG: estratégia e RPG geopolítico multiplayer em um mundo persistente."
+    />
+    <link rel="icon" type="image/svg+xml" href="/Icon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Imbue:opsz,wght@10..100,100..900&family=Parkinsans:wght@300..800&display=swap"
+      rel="stylesheet"
+    />
+    <title>GeoRPG</title>
+    <script>
+      try {
+        var saved = localStorage.getItem('georpg-theme')
+        if (saved === 'light' || saved === 'dark') document.documentElement.dataset.theme = saved
+      } catch (error) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
