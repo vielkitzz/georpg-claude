@@ -7,9 +7,10 @@ import { WorldMap } from '@/ui/map/WorldMap'
 type Status = 'loading' | 'ready' | 'error'
 
 /** Reads actual claims, never demo data. Server must revalidate when founding. */
-export function TerritoryPicker({ selectedId, onSelect }: {
+export function TerritoryPicker({ selectedId, onSelect, onAvailability }: {
   selectedId: number | null
   onSelect: (id: number | null) => void
+  onAvailability: (available: boolean) => void
 }) {
   const [status, setStatus] = useState<Status>('loading')
   const [claims, setClaims] = useState<TerritoryClaim[]>([])
@@ -40,6 +41,8 @@ export function TerritoryPicker({ selectedId, onSelect }: {
   const selected = geography.states.find(state => state.id === selectedId)
   const available = status === 'ready' && !!selected && !claimed.has(selected.id)
 
+  useEffect(() => { onAvailability(available) }, [available, onAvailability])
+
   return <div className="space-y-4">
     <p className="text-sm text-muted">Escolha um território livre no mapa ou na lista. Territórios ocupados não estão disponíveis.</p>
     {status === 'loading' && <p role="status">Carregando territórios…</p>}
@@ -63,6 +66,5 @@ export function TerritoryPicker({ selectedId, onSelect }: {
       </p>}
       <p className="text-xs text-muted">A disponibilidade será validada novamente pelo servidor no momento da fundação.</p>
     </>}
-    <input type="hidden" data-territory-available={available ? 'yes' : 'no'} />
   </div>
 }
