@@ -29,10 +29,14 @@ export function RequireNation({ mode }: { mode: 'game' | 'founding' }) {
     const client = getSupabase()
     if (!client) return
     let active = true
-    client.from('nations').select('id').eq('owner_id', userId).limit(1)
-      .then(({ data, error }) => {
+    void (async () => {
+      try {
+        const { data, error } = await client.from('nations').select('id').eq('owner_id', userId).limit(1)
         if (active) setResult({ userId, status: error ? 'error' : data?.length ? 'exists' : 'missing' })
-      }).catch(() => { if (active) setResult({ userId, status: 'error' }) })
+      } catch {
+        if (active) setResult({ userId, status: 'error' })
+      }
+    })()
     return () => { active = false }
   }, [userId, attempt])
 
