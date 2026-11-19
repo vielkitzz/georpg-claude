@@ -34,7 +34,6 @@ export function FoundNationPage() {
   const [step, setStep] = useState(0)
   const [shortName, setShortName] = useState('')
   const [article, setArticle] = useState<Article>('de')
-  const [territory, setTerritory] = useState('')
   const [governmentForm, setGovernmentForm] = useState<GovernmentForm>('republica')
   const [regime, setRegime] = useState<Regime>('democratico')
   const [system, setSystem] = useState<GovernmentSystem>('presidencialismo')
@@ -78,7 +77,7 @@ export function FoundNationPage() {
         <p className="text-sm text-muted">Nome oficial: {officialName}</p>
         {shortName && validateShortName(shortName) && <p role="alert" className="text-sm text-red-400">{validateShortName(shortName)}</p>}
       </>}
-      {step === 1 && <p className="text-muted">A seleção de território será conectada ao mapa e validada no servidor. Não é possível avançar enquanto isso não estiver pronto. {territory && <span>{territory}</span>}</p>}
+      {step === 1 && <p className="text-muted">A seleção de território será conectada ao mapa e validada no servidor. Não é possível avançar enquanto isso não estiver pronto.</p>}
       {step === 2 && <Choice label="Forma de governo" value={governmentForm} values={GOVERNMENT_FORMS} names={LABELS.governmentForm} onChange={v => { setGovernmentForm(v); const allowed = validSystems(v, regime); if (!allowed.includes(system)) setSystem(allowed[0]); const b = validLeadershipBases(v, regime); if (!b.includes(leadershipBasis)) setLeadershipBasis(b[0]) }} />}
       {step === 3 && <Choice label="Regime" value={regime} values={REGIMES} names={LABELS.regime} onChange={v => { setRegime(v); const allowed = validSystems(governmentForm, v); if (!allowed.includes(system)) setSystem(allowed[0]); const b = validLeadershipBases(governmentForm, v); if (!b.includes(leadershipBasis)) setLeadershipBasis(b[0]) }} />}
       {step === 4 && <Choice label="Sistema" value={system} values={systems} names={LABELS.system} onChange={setSystem} />}
