@@ -53,13 +53,15 @@ export function TextField({
   value,
   onChange,
   max,
+  placeholder,
   multiline = false,
   invalid = false,
 }: {
   label: string
   value: string
   onChange: (value: string) => void
-  max: number
+  max?: number
+  placeholder?: string
   multiline?: boolean
   invalid?: boolean
 }) {
@@ -67,6 +69,7 @@ export function TextField({
     className: fieldClass,
     value,
     maxLength: max,
+    placeholder,
     'aria-invalid': invalid || undefined,
     onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       onChange(event.target.value),

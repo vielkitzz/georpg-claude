@@ -86,6 +86,11 @@ const buttonDisabled =
   'disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0'
 const lastStep = STEPS.length - 1
 
+function normalizeCurrencyCode(value: string) {
+  const code = value.trim()
+  return /^[A-Za-z]{2,4}$/.test(code) ? code.toUpperCase() : code
+}
+
 export function FoundNationPage() {
   const navigate = useNavigate()
   const { role } = useAuth()
@@ -160,12 +165,13 @@ export function FoundNationPage() {
   }
 
   const next = async () => {
+    const currencyCode = normalizeCurrencyCode(draft.currencyCode)
     const validation = [
       territoryAvailable && draft.territoryId !== null
         ? null
         : 'Selecione um território livre para continuar.',
       validateShortName(draft.shortName),
-      validateEconomy(draft),
+      validateEconomy({ ...draft, currencyCode }),
       null,
       null,
       null,
@@ -196,6 +202,7 @@ export function FoundNationPage() {
         return
       }
     }
+    if (step === 2) edit('currencyCode', currencyCode)
     goTo(step + 1)
     if (step === 10) await refreshPreview()
   }
@@ -267,10 +274,10 @@ export function FoundNationPage() {
             />
             <TextField
               label="Código monetário"
-              invalid={!!error && !/^[A-Z]{2,4}$/.test(draft.currencyCode)}
-              max={4}
+              invalid={!!error && !/^[A-Z]{2,4}$/.test(normalizeCurrencyCode(draft.currencyCode))}
+              placeholder="Ex.: BRL"
               value={draft.currencyCode}
-              onChange={(value) => edit('currencyCode', value.toUpperCase())}
+              onChange={(value) => edit('currencyCode', value)}
             />
             <TextField
               label="Nome da moeda"

@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { FakeAuth } from '@/test/auth'
 import { QUESTIONS } from '@/domain/ideology'
@@ -94,11 +95,23 @@ it('valida e percorre as 12 etapas, preserva respostas e confirma a prévia ante
   next()
   expect(screen.getByRole('alert')).toHaveTextContent('capital')
   textField('Capital', 'Nova Aurora')
-  textField('Código monetário', 'au')
   textField('Nome da moeda', 'Áureo')
-  expect(screen.getByLabelText('Código monetário')).toHaveValue('AU')
+  const currencyField = screen.getByLabelText('Código monetário')
+  for (const invalid of ['A', 'ABCDF', 'A U', 'AU1', 'AÇ']) {
+    textField('Código monetário', invalid)
+    next()
+    expect(screen.getByRole('alert')).toHaveTextContent('2 a 4 letras')
+    expect(currencyField).toHaveAttribute('aria-invalid', 'true')
+  }
+  const user = userEvent.setup()
+  await user.clear(currencyField)
+  await user.paste('   auro  ')
+  expect(currencyField).toHaveValue('   auro  ')
   next()
   stage(4, 'Forma de governo')
+  click('Anterior')
+  expect(screen.getByLabelText('Código monetário')).toHaveValue('AURO')
+  next()
   radio('Monarquia')
   expect(screen.getByRole('status')).toHaveTextContent('Sistema ajustado para Parlamentarismo')
   next()
@@ -150,7 +163,7 @@ it('valida e percorre as 12 etapas, preserva respostas e confirma a prévia ante
   stage(12, 'Revelação final')
   expect(await screen.findByRole('heading', { name: 'Reino da Aurora' })).toBeInTheDocument()
   expect(screen.getByText('1.000.000')).toBeInTheDocument()
-  expect(screen.getByText('265.000.000 AU')).toBeInTheDocument()
+  expect(screen.getByText('265.000.000 AURO')).toBeInTheDocument()
   expect(screen.getByText('1920')).toBeInTheDocument()
   expect(invoke).not.toHaveBeenCalledWith(
     'found-nation',
@@ -179,7 +192,7 @@ it('valida e percorre as 12 etapas, preserva respostas e confirma a prévia ante
         article: 'da',
         territoryId: 1,
         capital: 'Nova Aurora',
-        currencyCode: 'AU',
+        currencyCode: 'AURO',
         currencyName: 'Áureo',
         institutions: expect.objectContaining({
           system: 'parlamentarismo',
