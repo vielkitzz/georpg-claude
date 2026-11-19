@@ -1,3 +1,5 @@
+import { validateFoundingText } from './draft.ts'
+
 /**
  * Opções institucionais da fundação e suas combinações válidas.
  * O navegador só MOSTRA o que é válido; o servidor revalida com estas mesmas funções.
@@ -127,7 +129,8 @@ export interface InstitutionsInput {
 }
 
 const inList = <T>(list: readonly T[], value: T) => list.includes(value)
-const validText = (value: string) => value.trim().length >= 2 && value.trim().length <= 60
+const validLeader = (leader: Leader | undefined) =>
+  validateFoundingText(leader?.title, 2, 60) && validateFoundingText(leader?.name, 2, 60)
 
 /** Lista os problemas do conjunto institucional (vazia = válido). */
 export function validateInstitutions(input: InstitutionsInput): string[] {
@@ -152,13 +155,13 @@ export function validateInstitutions(input: InstitutionsInput): string[] {
   if (!inList(SECOND_LEVEL_DIVISIONS, input.secondLevel)) {
     errors.push('Divisão de segundo nível inválida.')
   }
-  if (!validText(input.headOfState.title) || !validText(input.headOfState.name)) {
-    errors.push('Informe o título e o nome do chefe de Estado (2 a 60 letras).')
+  if (!validLeader(input.headOfState)) {
+    errors.push('Informe o título e o nome do chefe de Estado (2 a 60 caracteres).')
   }
   if (requiresHeadOfGovernment(input.system)) {
     const head = input.headOfGovernment
-    if (!head || !validText(head.title) || !validText(head.name)) {
-      errors.push('Informe o título e o nome do chefe de Governo.')
+    if (!validLeader(head)) {
+      errors.push('Informe o título e o nome do chefe de Governo (2 a 60 caracteres).')
     }
   } else if (input.headOfGovernment) {
     errors.push('Esse sistema de governo não tem chefe de Governo separado.')

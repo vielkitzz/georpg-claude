@@ -1,4 +1,4 @@
-import type { AxisScores } from './axes'
+import type { AxisScores } from './axes.ts'
 
 export type ArchetypeId =
   | 'liberal_classico'

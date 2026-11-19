@@ -1,11 +1,11 @@
-import type { AxisScores } from './axes'
+import type { AxisScores } from './axes.ts'
 import {
   localSelectionLegitimacy,
   type GovernmentForm,
   type LocalSelection,
   type Regime,
   type StateForm,
-} from '../founding/options'
+} from '../founding/options.ts'
 
 export interface Tension {
   id: string
