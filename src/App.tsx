@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router'
 import { RequireAccess } from '@/auth/RequireAccess'
+import { FoundNationPage } from '@/pages/FoundNationPage'
 import { ComingSoon } from '@/pages/ComingSoon'
 import { DashboardPage } from '@/pages/Dashboard'
 import { GovernmentPage } from '@/pages/Government'
@@ -20,15 +21,7 @@ export function App() {
         </Route>
       </Route>
       <Route path="login" element={<LoginPage />} />
-      <Route
-        path="criar-pais"
-        element={
-          <ComingSoon
-            title="Fundação de nação"
-            text="O assistente de fundação em 12 etapas chega na Fase 2."
-          />
-        }
-      />
+      <Route path="criar-pais" element={<FoundNationPage />} />
       <Route
         path="*"
         element={
