@@ -19,11 +19,15 @@ interface Props {
   onFinish: () => void
   /** Preenchimento aleatório: só aparece para administradores (testes). */
   onRandomFill?: () => void
+  busy?: boolean
 }
 
 /** Uma pergunta por vez, 5 respostas, atalho de teclado 1 a 5 e botão de voltar. */
-export function Quiz({ answers, onAnswer, onFinish, onRandomFill }: Props) {
-  const [index, setIndex] = useState(0)
+export function Quiz({ answers, onAnswer, onFinish, onRandomFill, busy = false }: Props) {
+  const [index, setIndex] = useState(() => {
+    const firstMissing = QUESTIONS.findIndex((item) => answers[item.id] === undefined)
+    return Math.max(0, firstMissing)
+  })
   const question = QUESTIONS[index]
   const chapterId = AXES.find((axis) => axis.id === question.axis)?.chapter
   const chapter = CHAPTERS.find((item) => item.id === chapterId)
@@ -37,8 +41,13 @@ export function Quiz({ answers, onAnswer, onFinish, onRandomFill }: Props) {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null
-      if (target?.closest('input, textarea, select, [contenteditable="true"]')) return
+      if (busy || event.repeat) return
+      const target = event.target
+      if (
+        target instanceof Element &&
+        target.closest('input, textarea, select, [contenteditable="true"]')
+      )
+        return
       if (event.ctrlKey || event.metaKey || event.altKey) return
       const value = Number(event.key)
       if (value >= 1 && value <= 5) {
@@ -48,7 +57,7 @@ export function Quiz({ answers, onAnswer, onFinish, onRandomFill }: Props) {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [question.id, onAnswer])
+  }, [question.id, onAnswer, busy])
 
   return (
     <section aria-labelledby="pergunta" className="mx-auto flex max-w-2xl flex-col gap-6">
@@ -87,6 +96,7 @@ export function Quiz({ answers, onAnswer, onFinish, onRandomFill }: Props) {
               type="button"
               role="radio"
               aria-checked={selected}
+              disabled={busy}
               onClick={() => choose(value)}
               className={`flex items-center gap-4 rounded-md border px-4 py-3 text-left transition-colors ${
                 selected
@@ -113,14 +123,22 @@ export function Quiz({ answers, onAnswer, onFinish, onRandomFill }: Props) {
         <button
           type="button"
           onClick={() => setIndex(index - 1)}
-          disabled={index === 0}
+          disabled={busy || index === 0}
           className={`${secondaryButton} flex items-center gap-2 disabled:cursor-not-allowed disabled:opacity-40`}
         >
           <ArrowLeft size={18} aria-hidden />
           Voltar à pergunta anterior
         </button>
+        <button
+          type="button"
+          onClick={() => setIndex(index + 1)}
+          disabled={busy || !current || index === QUESTIONS.length - 1}
+          className={`${secondaryButton} disabled:cursor-not-allowed disabled:opacity-40`}
+        >
+          Avançar à pergunta seguinte
+        </button>
         {complete && (
-          <button type="button" onClick={onFinish} className={primaryButton}>
+          <button type="button" disabled={busy} onClick={onFinish} className={primaryButton}>
             Ver resultado
           </button>
         )}
@@ -128,6 +146,7 @@ export function Quiz({ answers, onAnswer, onFinish, onRandomFill }: Props) {
           <button
             type="button"
             onClick={onRandomFill}
+            disabled={busy}
             className={`${secondaryButton} ml-auto flex items-center gap-2`}
           >
             <Dices size={18} aria-hidden />
