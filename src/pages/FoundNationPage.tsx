@@ -85,6 +85,7 @@ const initialDraft: FoundingDraft = {
 const buttonDisabled =
   'disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0'
 const lastStep = STEPS.length - 1
+const quizStep = 9
 
 function normalizeCurrencyCode(value: string) {
   const code = value.trim()
@@ -118,6 +119,8 @@ export function FoundNationPage() {
     ? composeOfficialCountryName({ ...draft, ...institutions })
     : ''
   const scores = quizFinished ? scoreQuiz(draft.answers) : null
+  const answeringQuiz = step === quizStep && !quizFinished
+  const unanswered = answeringQuiz ? missingQuestions(draft.answers).length : 0
   const invalidText = (value: string) => !!error && !validateFoundingText(value, 2, 60)
 
   const edit = <K extends keyof FoundingDraft>(field: K, value: FoundingDraft[K]) => {
@@ -165,6 +168,21 @@ export function FoundNationPage() {
   }
 
   const next = async () => {
+    if (answeringQuiz) {
+      if (unanswered > 0) {
+        setError({
+          error:
+            unanswered === 1
+              ? 'Falta responder uma pergunta do questionário.'
+              : `Faltam ${unanswered} perguntas do questionário.`,
+        })
+        return
+      }
+      setQuizFinished(true)
+      setError(null)
+      requestAnimationFrame(() => heading.current?.focus())
+      return
+    }
     const currencyCode = normalizeCurrencyCode(draft.currencyCode)
     const validation = [
       territoryAvailable && draft.territoryId !== null
@@ -178,11 +196,9 @@ export function FoundNationPage() {
       null,
       null,
       validateInstitutions(payload.institutions)[0],
-      !scores
-        ? 'Conclua o questionário para continuar.'
-        : !topThree(scores).some((match) => match.archetype.id === draft.ideology)
-          ? 'Escolha uma das três ideologias mais próximas.'
-          : null,
+      scores && !topThree(scores).some((match) => match.archetype.id === draft.ideology)
+        ? 'Escolha uma das três ideologias mais próximas.'
+        : null,
       validateSymbols(draft.symbols),
     ][step]
     if (validation) {
@@ -424,7 +440,7 @@ export function FoundNationPage() {
             )}
           </>
         )
-      case 9:
+      case quizStep:
         return scores ? (
           <>
             <Report
@@ -447,12 +463,13 @@ export function FoundNationPage() {
         ) : (
           <Quiz
             answers={draft.answers}
-            onAnswer={(id, answer) => edit('answers', { ...draft.answers, [id]: answer })}
-            onFinish={() => {
-              if (!missingQuestions(draft.answers).length) {
-                setQuizFinished(true)
-                setError(null)
-              }
+            onAnswer={(id, answer) => {
+              setDraft((current) => ({
+                ...current,
+                answers: { ...current.answers, [id]: answer },
+              }))
+              setError(null)
+              setPreview(null)
             }}
             onRandomFill={role === 'ADMIN' ? randomFill : undefined}
             busy={busy}
@@ -553,7 +570,11 @@ export function FoundNationPage() {
                     disabled={busy || reading > 0}
                     onClick={next}
                   >
-                    {busy ? 'Aguarde…' : 'Próxima'}
+                    {busy
+                      ? 'Aguarde…'
+                      : answeringQuiz && unanswered === 0
+                        ? 'Ver resultado'
+                        : 'Próxima'}
                   </button>
                 ) : (
                   <div className="flex flex-wrap gap-2">

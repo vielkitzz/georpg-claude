@@ -1,5 +1,5 @@
 import { ArrowLeft, Dices } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   ANSWER_LABELS,
   AXES,
@@ -16,7 +16,7 @@ const ANSWER_VALUES: readonly Answer[] = [1, 2, 3, 4, 5]
 interface Props {
   answers: Answers
   onAnswer: (questionId: string, answer: Answer) => void
-  onFinish: () => void
+  onFinish?: () => void
   /** Preenchimento aleatório: só aparece para administradores (testes). */
   onRandomFill?: () => void
   busy?: boolean
@@ -31,13 +31,16 @@ export function Quiz({ answers, onAnswer, onFinish, onRandomFill, busy = false }
   const question = QUESTIONS[index]
   const chapterId = AXES.find((axis) => axis.id === question.axis)?.chapter
   const chapter = CHAPTERS.find((item) => item.id === chapterId)
-  const complete = missingQuestions(answers).length === 0
+  const remaining = missingQuestions(answers).length
   const current = answers[question.id]
 
-  const choose = (answer: Answer) => {
-    onAnswer(question.id, answer)
-    if (index < QUESTIONS.length - 1) setIndex(index + 1)
-  }
+  const choose = useCallback(
+    (answer: Answer) => {
+      onAnswer(question.id, answer)
+      if (index < QUESTIONS.length - 1) setIndex(index + 1)
+    },
+    [index, onAnswer, question.id],
+  )
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -51,13 +54,12 @@ export function Quiz({ answers, onAnswer, onFinish, onRandomFill, busy = false }
       if (event.ctrlKey || event.metaKey || event.altKey) return
       const value = Number(event.key)
       if (value >= 1 && value <= 5) {
-        onAnswer(question.id, value as Answer)
-        setIndex((i) => Math.min(i + 1, QUESTIONS.length - 1))
+        choose(value as Answer)
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [question.id, onAnswer, busy])
+  }, [choose, busy])
 
   return (
     <section aria-labelledby="pergunta" className="mx-auto flex max-w-2xl flex-col gap-6">
@@ -137,7 +139,7 @@ export function Quiz({ answers, onAnswer, onFinish, onRandomFill, busy = false }
         >
           Avançar à pergunta seguinte
         </button>
-        {complete && (
+        {remaining === 0 && onFinish && (
           <button type="button" disabled={busy} onClick={onFinish} className={primaryButton}>
             Ver resultado
           </button>
@@ -154,9 +156,9 @@ export function Quiz({ answers, onAnswer, onFinish, onRandomFill, busy = false }
           </button>
         )}
       </div>
-      {!complete && (
+      {remaining > 0 && (
         <p className="text-sm text-muted" role="status">
-          Faltam {missingQuestions(answers).length} resposta(s) para ver o resultado.
+          Faltam {remaining} resposta(s) para ver o resultado.
         </p>
       )}
     </section>

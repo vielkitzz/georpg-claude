@@ -139,8 +139,23 @@ it('valida e percorre as 12 etapas, preserva respostas e confirma a prévia ante
   next()
   stage(10, 'Questionário ideológico')
   expect(screen.queryByRole('button', { name: /aleatoriamente/ })).not.toBeInTheDocument()
-  for (let index = 0; index < QUESTIONS.length; index++) fireEvent.keyDown(window, { key: '3' })
-  click('Ver resultado')
+  fireEvent.keyDown(window, { key: '3' })
+  click('Anterior')
+  next()
+  expect(screen.getByRole('heading', { name: QUESTIONS[1].text })).toBeInTheDocument()
+  for (let index = 1; index < QUESTIONS.length - 1; index++) {
+    fireEvent.keyDown(window, { key: '3' })
+  }
+  next()
+  expect(screen.getByRole('alert')).toHaveTextContent(
+    'Falta responder uma pergunta do questionário.',
+  )
+  fireEvent.keyDown(window, { key: '3' })
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  const wizardNav = screen.getByRole('navigation', { name: 'Etapas da fundação' })
+  const resultButton = screen.getByRole('button', { name: 'Ver resultado' })
+  expect(wizardNav).toContainElement(resultButton)
+  fireEvent.click(resultButton)
   expect(screen.getByRole('heading', { name: 'Eixos por capítulo' })).toBeInTheDocument()
   expect(screen.getByRole('heading', { name: 'Análise de coerência' })).toBeInTheDocument()
   next()
