@@ -11,6 +11,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      # Regenera o lockfile para acomodar dependências opcionais ausentes.
+      # Temporário: remover esta etapa após versionar o lockfile sincronizado.
+      - run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
       - run: npm ci
       - run: npm run lint
       - run: npm test
