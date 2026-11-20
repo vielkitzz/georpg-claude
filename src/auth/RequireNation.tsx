@@ -31,7 +31,7 @@ export function RequireNation({ mode }: { mode: 'game' | 'founding' }) {
     let active = true
     void (async () => {
       try {
-        const { data, error } = await client.from('nations').select('id').eq('owner_id', userId).limit(1)
+        const { data, error } = await client.from('nations').select('id').eq('owner_id', userId).eq('status', 'active').limit(1)
         if (active) setResult({ userId, status: error ? 'error' : data?.length ? 'exists' : 'missing' })
       } catch {
         if (active) setResult({ userId, status: 'error' })

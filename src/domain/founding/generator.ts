@@ -1,6 +1,6 @@
-import type { ArchetypeId } from '../ideology/archetypes'
-import { between, createRng, pick, type Rng } from './rng'
-import type { GovernmentForm, GovernmentSystem, Regime, StateForm } from './options'
+import type { ArchetypeId } from '../ideology/archetypes.ts'
+import { between, createRng, pick, type Rng } from './rng.ts'
+import type { GovernmentForm, GovernmentSystem, Regime, StateForm } from './options.ts'
 
 /** Condições iniciais fixas da fundação. O ano vem do estado do mundo no servidor. */
 export const INITIAL_POPULATION = 1_000_000

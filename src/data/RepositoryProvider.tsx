@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
-import { RepositoryContext, demoRepository, type GameRepository } from './repository'
+import { RepositoryContext, type GameRepository } from './repository'
 import { supabaseRepository } from './supabaseRepository'
 
 export function RepositoryProvider({
-  repository = import.meta.env.MODE === 'test' ? demoRepository : supabaseRepository,
+  repository = supabaseRepository,
   children,
 }: {
   repository?: GameRepository

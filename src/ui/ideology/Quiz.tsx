@@ -1,5 +1,5 @@
 import { ArrowLeft, Dices } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   ANSWER_LABELS,
   AXES,
@@ -16,39 +16,50 @@ const ANSWER_VALUES: readonly Answer[] = [1, 2, 3, 4, 5]
 interface Props {
   answers: Answers
   onAnswer: (questionId: string, answer: Answer) => void
-  onFinish: () => void
+  onFinish?: () => void
   /** Preenchimento aleatório: só aparece para administradores (testes). */
   onRandomFill?: () => void
+  busy?: boolean
 }
 
 /** Uma pergunta por vez, 5 respostas, atalho de teclado 1 a 5 e botão de voltar. */
-export function Quiz({ answers, onAnswer, onFinish, onRandomFill }: Props) {
-  const [index, setIndex] = useState(0)
+export function Quiz({ answers, onAnswer, onFinish, onRandomFill, busy = false }: Props) {
+  const [index, setIndex] = useState(() => {
+    const firstMissing = QUESTIONS.findIndex((item) => answers[item.id] === undefined)
+    return Math.max(0, firstMissing)
+  })
   const question = QUESTIONS[index]
   const chapterId = AXES.find((axis) => axis.id === question.axis)?.chapter
   const chapter = CHAPTERS.find((item) => item.id === chapterId)
-  const complete = missingQuestions(answers).length === 0
+  const remaining = missingQuestions(answers).length
   const current = answers[question.id]
 
-  const choose = (answer: Answer) => {
-    onAnswer(question.id, answer)
-    if (index < QUESTIONS.length - 1) setIndex(index + 1)
-  }
+  const choose = useCallback(
+    (answer: Answer) => {
+      onAnswer(question.id, answer)
+      if (index < QUESTIONS.length - 1) setIndex(index + 1)
+    },
+    [index, onAnswer, question.id],
+  )
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null
-      if (target?.closest('input, textarea, select, [contenteditable="true"]')) return
+      if (busy || event.repeat) return
+      const target = event.target
+      if (
+        target instanceof Element &&
+        target.closest('input, textarea, select, [contenteditable="true"]')
+      )
+        return
       if (event.ctrlKey || event.metaKey || event.altKey) return
       const value = Number(event.key)
       if (value >= 1 && value <= 5) {
-        onAnswer(question.id, value as Answer)
-        setIndex((i) => Math.min(i + 1, QUESTIONS.length - 1))
+        choose(value as Answer)
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [question.id, onAnswer])
+  }, [choose, busy])
 
   return (
     <section aria-labelledby="pergunta" className="mx-auto flex max-w-2xl flex-col gap-6">
@@ -87,6 +98,7 @@ export function Quiz({ answers, onAnswer, onFinish, onRandomFill }: Props) {
               type="button"
               role="radio"
               aria-checked={selected}
+              disabled={busy}
               onClick={() => choose(value)}
               className={`flex items-center gap-4 rounded-md border px-4 py-3 text-left transition-colors ${
                 selected
@@ -113,14 +125,22 @@ export function Quiz({ answers, onAnswer, onFinish, onRandomFill }: Props) {
         <button
           type="button"
           onClick={() => setIndex(index - 1)}
-          disabled={index === 0}
+          disabled={busy || index === 0}
           className={`${secondaryButton} flex items-center gap-2 disabled:cursor-not-allowed disabled:opacity-40`}
         >
           <ArrowLeft size={18} aria-hidden />
           Voltar à pergunta anterior
         </button>
-        {complete && (
-          <button type="button" onClick={onFinish} className={primaryButton}>
+        <button
+          type="button"
+          onClick={() => setIndex(index + 1)}
+          disabled={busy || !current || index === QUESTIONS.length - 1}
+          className={`${secondaryButton} disabled:cursor-not-allowed disabled:opacity-40`}
+        >
+          Avançar à pergunta seguinte
+        </button>
+        {remaining === 0 && onFinish && (
+          <button type="button" disabled={busy} onClick={onFinish} className={primaryButton}>
             Ver resultado
           </button>
         )}
@@ -128,6 +148,7 @@ export function Quiz({ answers, onAnswer, onFinish, onRandomFill }: Props) {
           <button
             type="button"
             onClick={onRandomFill}
+            disabled={busy}
             className={`${secondaryButton} ml-auto flex items-center gap-2`}
           >
             <Dices size={18} aria-hidden />
@@ -135,9 +156,9 @@ export function Quiz({ answers, onAnswer, onFinish, onRandomFill }: Props) {
           </button>
         )}
       </div>
-      {!complete && (
+      {remaining > 0 && (
         <p className="text-sm text-muted" role="status">
-          Faltam {missingQuestions(answers).length} resposta(s) para ver o resultado.
+          Faltam {remaining} resposta(s) para ver o resultado.
         </p>
       )}
     </section>

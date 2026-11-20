@@ -1,4 +1,4 @@
-import type { GovernmentForm, StateForm } from './options'
+import type { GovernmentForm, StateForm } from './options.ts'
 
 export type Article = 'de' | 'da' | 'do'
 export const ARTICLES: readonly Article[] = ['de', 'da', 'do']

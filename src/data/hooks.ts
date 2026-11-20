@@ -7,6 +7,7 @@ function useLoad<T>(pick: (repository: GameRepository) => Promise<T>): Load<T> {
   const repository = useContext(RepositoryContext)
   const [state, setState] = useState<Load<T>>({ status: 'loading' })
   useEffect(() => {
+    if (!repository) return
     let active = true
     pick(repository).then(
       (data) => active && setState({ status: 'ready', data }),
@@ -16,7 +17,7 @@ function useLoad<T>(pick: (repository: GameRepository) => Promise<T>): Load<T> {
       active = false
     }
   }, [repository, pick])
-  return state
+  return repository ? state : { status: 'error' }
 }
 
 const pickWorld = (r: GameRepository) => r.getWorldState()

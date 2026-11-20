@@ -1,31 +1,54 @@
+export type NavId =
+  | 'overview'
+  | 'map'
+  | 'history'
+  | 'government'
+  | 'economy'
+  | 'society'
+  | 'infrastructure'
+  | 'military'
+  | 'technology'
+  | 'diplomacy'
+  | 'press'
+
 export interface NavItem {
-  id: string
+  id: NavId
   label: string
-  /** Rota. Sem `path`, a seção ainda não existe e aparece como "em breve". */
-  path?: string
-  icon:
-    | 'overview'
-    | 'map'
-    | 'government'
-    | 'economy'
-    | 'society'
-    | 'diplomacy'
-    | 'military'
-    | 'press'
-    | 'technology'
-    | 'history'
+  path: string
 }
 
-/** As dez seções da Sidebar, sem numeração. */
-export const NAV_ITEMS: readonly NavItem[] = [
-  { id: 'overview', label: 'Visão geral', path: '/', icon: 'overview' },
-  { id: 'map', label: 'Mapa mundial', path: '/mapa', icon: 'map' },
-  { id: 'government', label: 'Governo e política', path: '/governo', icon: 'government' },
-  { id: 'economy', label: 'Economia', icon: 'economy' },
-  { id: 'society', label: 'População e sociedade', icon: 'society' },
-  { id: 'diplomacy', label: 'Diplomacia', icon: 'diplomacy' },
-  { id: 'military', label: 'Forças armadas', icon: 'military' },
-  { id: 'press', label: 'Imprensa', icon: 'press' },
-  { id: 'technology', label: 'Tecnologia e pesquisa', icon: 'technology' },
-  { id: 'history', label: 'Histórico nacional', icon: 'history' },
-]
+export const NAV_GROUPS = [
+  {
+    title: 'Nação',
+    items: [
+      { id: 'overview', label: 'Painel Geral', path: '/' },
+      { id: 'map', label: 'Mapa Mundial', path: '/mapa' },
+      { id: 'history', label: 'Histórico Nacional', path: '/historico' },
+    ],
+  },
+  {
+    title: 'Gestão',
+    items: [
+      { id: 'government', label: 'Governo e Política', path: '/governo' },
+      { id: 'economy', label: 'Economia', path: '/economia' },
+      { id: 'society', label: 'População e Sociedade', path: '/sociedade' },
+      { id: 'infrastructure', label: 'Infraestrutura', path: '/infraestrutura' },
+    ],
+  },
+  {
+    title: 'Estratégia',
+    items: [
+      { id: 'military', label: 'Forças Armadas', path: '/militar' },
+      { id: 'technology', label: 'Tecnologia e Pesquisa', path: '/tecnologia' },
+    ],
+  },
+  {
+    title: 'Relações',
+    items: [
+      { id: 'diplomacy', label: 'Diplomacia', path: '/diplomacia' },
+      { id: 'press', label: 'Imprensa', path: '/imprensa' },
+    ],
+  },
+] as const satisfies readonly { title: string; items: readonly NavItem[] }[]
+
+export const NAV_ITEMS = NAV_GROUPS.flatMap<NavItem>((group) => [...group.items])

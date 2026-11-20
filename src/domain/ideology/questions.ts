@@ -1,4 +1,4 @@
-import type { AxisId } from './axes'
+import type { AxisId } from './axes.ts'
 
 export interface Question {
   /** "{eixo}-{1..3}" */

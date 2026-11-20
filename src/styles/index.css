@@ -95,6 +95,75 @@ body {
   font-weight: 600;
 }
 
+.founding {
+  color-scheme: dark;
+  --bg: var(--navy);
+  --panel: var(--deep);
+  --panel-raised: color-mix(in srgb, var(--deep) 82%, var(--cream));
+  --fg: var(--cream);
+  --muted: color-mix(in srgb, var(--cream) 72%, var(--navy));
+  --line: color-mix(in srgb, var(--cream) 20%, transparent);
+  --primary-text: var(--coral-soft);
+  --secondary: var(--coral-soft);
+  --positive: var(--green);
+  --warning: var(--yellow);
+  background-image: radial-gradient(ellipse at 60% 0%, var(--deep), transparent 55%);
+}
+
+.founding-panel {
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--panel) 80%, var(--bg));
+}
+
+.founding-choice {
+  display: flex;
+  min-width: 0;
+  min-height: 3rem;
+  align-items: center;
+  gap: .65rem;
+  padding: .7rem .85rem;
+  border: 1px solid var(--line);
+  border-radius: .6rem;
+  background: var(--bg);
+  font-size: .875rem;
+  cursor: pointer;
+  transition: background-color 150ms, border-color 150ms;
+}
+
+.founding-choice:has(input:checked),
+.founding-choice:hover:not(:has(input:disabled)) {
+  border-color: var(--secondary);
+  background: var(--panel-raised);
+}
+
+.founding-choice input {
+  accent-color: var(--secondary);
+}
+
+.founding-choice:has(input:disabled) {
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.founding-choice small {
+  margin-inline-start: auto;
+}
+
+.founding [aria-invalid='true'] {
+  border-color: var(--warning);
+}
+
+.founding-error {
+  color: var(--warning);
+  border-left: 2px solid currentColor;
+  padding-inline-start: .75rem;
+}
+
+.founding-reveal {
+  background: radial-gradient(ellipse at 50% 0%, var(--panel-raised), var(--bg));
+}
+
 :focus-visible {
   outline: 2px solid var(--primary-text);
   outline-offset: 2px;

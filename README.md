@@ -1,4 +1,4 @@
-# GeoRPG (Fase 2, bloco A: domínio da fundação)
+# GeoRPG
 
 Estratégia e RPG geopolítico multiplayer. Interface em português do Brasil.
 
@@ -29,23 +29,20 @@ Banco: `supabase/migrations/` (já aplicada no projeto). Função: `supabase/fun
 ## Camadas
 
 - `src/domain/`: regras puras (tempo/tick, formatação, política, geometria e viewport do mapa). `time.ts` guarda a escala de tempo em um único lugar (`TIME_SCALE`: 1 dia real = 1 mês de jogo; tick às 8h de Brasília = 11:00 UTC).
-- `src/data/`: fonte de dados atrás da interface `GameRepository`. Na Fase 0 é a demonstração (nação Teste); na Fase 2 troca-se para o Supabase sem mexer nas páginas.
+- `src/data/`: acesso ao Supabase por meio de `GameRepository`. O repositório de demonstração é usado nos testes.
 - `src/ui/` e `src/pages/`: componentes pequenos e telas.
 - `scripts/build-map.ts`: gera a geografia (sem dono, nome ou cor) reconstruindo fronteiras pelas arestas compartilhadas e convertendo lon/lat em pixels (1662×780).
 
-## Fase 2, bloco A (checkpoint)
+## Fundação de nação
 
-Domínio puro e testado da fundação, sem o assistente ainda:
+O assistente em `/criar-pais` integra o mapa, as instituições e o questionário ideológico em 12 etapas.
 
 - `src/domain/founding/`: opções e combinações válidas (`options.ts`), nome oficial (`name.ts`), semente determinística (`rng.ts`) e gerador de condições iniciais (`generator.ts`).
 - `src/domain/ideology/`: `ideology-quiz` (36 afirmações, 12 eixos, 11 arquétipos, bússola, retrato e análise de coerência).
-- `/teste-quiz`: página **temporária** para experimentar o questionário (será removida no bloco B). O preenchimento aleatório só aparece para `ADMIN`.
+- `/teste-quiz`: página para experimentar o questionário separadamente. O sorteio de respostas exige o papel `ADMIN` no servidor.
 
-## Fora do bloco A
+### Atualização do Supabase
 
-Assistente de 12 etapas, bandeira/brasão com compressão, Edge Function `found-nation`, guarda 2 e dashboard com a nação real.
+Em uma janela de implantação autorizada, aplique `20261119225359_founding_preview_and_symbols.sql`, publique a Edge Function `found-nation` e atualize o frontend. A migration cria um bucket privado para PNGs e altera a assinatura da função de confirmação, mantendo os registros existentes. A função usa os mesmos segredos Discord da Fase 1.
 
-## Fora da Fase 1
-
-Guarda 2 (sem nação → `/criar-pais`), assistente de fundação, quiz, ordens e tick real.
-Os dados do dashboard, governo e mapa ainda são de demonstração. `/criar-pais` é página "em breve".
+Para verificar a transação em uma instância Supabase local com as migrations aplicadas, execute `supabase/tests/founding.sql` via `psql` com `ON_ERROR_STOP=1`. O teste reverte os registros que cria.

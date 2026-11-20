@@ -1,7 +1,7 @@
-import { AXES, AXIS_IDS, type AxisScores } from './axes'
-import { ARCHETYPES, type Archetype } from './archetypes'
-import { QUESTIONS } from './questions'
-import { createRng, pick, type Rng } from '../founding/rng'
+import { AXES, AXIS_IDS, type AxisScores } from './axes.ts'
+import { ARCHETYPES, type Archetype } from './archetypes.ts'
+import { QUESTIONS } from './questions.ts'
+import { createRng, pick, type Rng } from '../founding/rng.ts'
 
 export type Answer = 1 | 2 | 3 | 4 | 5
 /** Respostas por id de pergunta. */

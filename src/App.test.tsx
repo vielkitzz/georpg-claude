@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Outlet } from 'react-router'
 
@@ -7,12 +7,19 @@ vi.mock('./auth/RequireNation', () => ({ RequireNation: () => <Outlet /> }))
 import { App } from './App'
 import type { AuthValue } from './auth/AuthContext'
 import { RepositoryProvider } from './data/RepositoryProvider'
+import { demoRepository } from './data/demo'
+import type { GameRepository } from './data/repository'
+import { NAV_ITEMS } from './domain/nav'
 import { FakeAuth } from './test/auth'
 
-const renderAt = (path: string, auth: Partial<AuthValue> = {}) =>
+const renderAt = (
+  path: string,
+  auth: Partial<AuthValue> = {},
+  repository: GameRepository = demoRepository,
+) =>
   render(
     <FakeAuth value={auth}>
-      <RepositoryProvider>
+      <RepositoryProvider repository={repository}>
         <MemoryRouter initialEntries={[path]}>
           <App />
         </MemoryRouter>
@@ -24,7 +31,7 @@ describe('App com acesso liberado', () => {
   it('a visão geral mostra a nação de demonstração', async () => {
     renderAt('/')
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'República do Teste' }),
+      await screen.findByRole('heading', { level: 2, name: 'República do Teste' }),
     ).toBeInTheDocument()
     expect(
       await within(screen.getByRole('banner')).findByText('Janeiro de 1920'),
@@ -33,8 +40,10 @@ describe('App com acesso liberado', () => {
 
   it('governo mostra instituições, gabinete e parlamento', async () => {
     renderAt('/governo')
-    expect(await screen.findByRole('heading', { name: 'Instituições' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Gabinete' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { name: 'Instituições políticas' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Gabinete ministerial' })).toBeInTheDocument()
     expect(screen.getByText(/O governo tem 60 de 100 cadeiras/)).toBeInTheDocument()
   })
 
@@ -47,6 +56,59 @@ describe('App com acesso liberado', () => {
   it('a Topbar mostra o jogador do Discord', async () => {
     renderAt('/')
     expect(await within(screen.getByRole('banner')).findByText('Fulano')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /avisos/i })).not.toBeInTheDocument()
+  })
+
+  it('abre todas as páginas pelo menu com o título e a seleção correspondentes', async () => {
+    renderAt('/')
+    const menu = within(screen.getByRole('navigation', { name: 'Seções do jogo' }))
+    for (const item of NAV_ITEMS) {
+      const link = menu.getByRole('link', { name: item.label })
+      fireEvent.click(link)
+      expect(await screen.findByRole('heading', { name: item.label, level: 1 })).toBeInTheDocument()
+      expect(link).toHaveAttribute('aria-current', 'page')
+    }
+  })
+
+  it('apresenta estado vazio contextual quando a infraestrutura não tem registros', async () => {
+    renderAt('/infraestrutura')
+    expect(
+      await screen.findByRole('heading', { name: 'Projetos e investimentos' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/Obras e despesas de infraestrutura aparecerão/)).toBeInTheDocument()
+  })
+
+  it('trata carregamento e erro do repositório', async () => {
+    const getNation = vi.fn().mockRejectedValue(new Error('Indisponível'))
+    renderAt('/economia', {}, { ...demoRepository, getNation })
+    expect(screen.getByText('Carregando a nação…')).toBeInTheDocument()
+    expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível carregar a nação')
+  })
+
+  it('exibe ausência de dados nacionais quando o repositório está vazio', async () => {
+    renderAt('/imprensa', {}, { ...demoRepository, getNation: async () => null })
+    expect(await screen.findByText('Você ainda não fundou uma nação.')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Notícias nacionais' })).not.toBeInTheDocument()
+  })
+
+  it('mostra a aprovação atual e omite o gráfico quando há uma única medição', async () => {
+    const nation = await demoRepository.getNation()
+    if (!nation) throw new Error('A nação de teste é necessária')
+    renderAt(
+      '/',
+      {},
+      {
+        ...demoRepository,
+        getNation: async () => ({
+          ...nation,
+          approvalHistory: [54],
+          news: [],
+        }),
+      },
+    )
+    expect(await screen.findByText(/Aprovação atual de 54%/)).toBeInTheDocument()
+    expect(screen.queryByRole('img', { name: /aprovação nos últimos/i })).not.toBeInTheDocument()
+    expect(screen.getByText(/ainda não tem notícias publicadas/)).toBeInTheDocument()
   })
 
   it('"Sair" encerra a sessão e leva a /login', async () => {
@@ -63,8 +125,8 @@ describe('App com acesso liberado', () => {
 })
 
 describe('guarda de acesso', () => {
-  it('sem sessão, qualquer página protegida cai no login', () => {
-    renderAt('/governo', { auth: 'anon', guild: { status: 'idle' }, player: null })
+  it.each(NAV_ITEMS)('sem sessão, $path cai no login', ({ path }) => {
+    renderAt(path, { auth: 'anon', guild: { status: 'idle' }, player: null })
     expect(screen.getByRole('heading', { name: 'Entrar no GeoRPG' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Entrar com o Discord' })).toBeInTheDocument()
   })
@@ -79,7 +141,7 @@ describe('guarda de acesso', () => {
   it('logado e dentro do servidor, /login volta para a visão geral', async () => {
     renderAt('/login')
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'República do Teste' }),
+      await screen.findByRole('heading', { level: 2, name: 'República do Teste' }),
     ).toBeInTheDocument()
   })
 
