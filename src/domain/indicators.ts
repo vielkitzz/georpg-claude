@@ -7,6 +7,6 @@ export function deltaMood({
   delta,
   lowerIsBetter,
 }: Pick<Indicator, 'delta' | 'lowerIsBetter'>): Mood {
-  if (delta === 0) return 'flat'
+  if (delta === undefined || delta === 0) return 'flat'
   return delta > 0 !== Boolean(lowerIsBetter) ? 'good' : 'bad'
 }

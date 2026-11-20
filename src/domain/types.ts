@@ -8,7 +8,7 @@ export interface Indicator {
   /** Texto já formatado para exibição. */
   value: string
   /** Variação desde o último tick; sinal define a cor. */
-  delta: number
+  delta?: number
   /** Quando true, valor menor é melhor (ex.: inflação). */
   lowerIsBetter?: boolean
 }
@@ -16,7 +16,7 @@ export interface Indicator {
 export interface Minister {
   office: string
   name: string
-  approval: number
+  approval: number | null
 }
 
 export interface Party {
@@ -33,17 +33,26 @@ export interface NewsItem {
   summary: string
 }
 
+export interface Chamber {
+  name: string
+  seats: number | null
+  elected: boolean | null
+  parties: Party[]
+}
+
 export interface Nation {
   id: string
   shortName: string
   officialName: string
   capital: string
   currency: { code: string; name: string }
-  nationalColor: string
+  nationalColor: string | null
   motto: string
   territoryId: number
   foundedYear: number
-  population: number
+  description: string
+  history: string
+  population: number | null
   government: {
     form: string
     regime: string
@@ -58,10 +67,10 @@ export interface Nation {
     governmentHead?: { title: string; name: string }
   }
   indicators: Indicator[]
-  legitimacy: number
+  legitimacy: number | null
   approvalHistory: number[]
   ministries: Minister[]
-  chamber: { name: string; parties: Party[] }
+  chambers: Chamber[]
   news: NewsItem[]
 }
 

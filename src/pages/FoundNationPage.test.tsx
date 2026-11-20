@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { Link, MemoryRouter, useNavigate } from 'react-router'
 import { App } from '@/App'
 import { RepositoryProvider } from '@/data/RepositoryProvider'
+import { demoRepository } from '@/data/demo'
 import { FakeAuth } from '@/test/auth'
 import { QUESTIONS } from '@/domain/ideology'
 
@@ -41,11 +42,11 @@ function HistoryControls() {
   )
 }
 
-function renderWizard(role: 'PLAYER' | 'ADMIN' = 'PLAYER') {
+function renderWizard(entries = ['/criar-pais', '/criar-pais']) {
   render(
-    <FakeAuth value={{ role }}>
-      <RepositoryProvider>
-        <MemoryRouter initialEntries={['/criar-pais', '/criar-pais']}>
+    <FakeAuth>
+      <RepositoryProvider repository={demoRepository}>
+        <MemoryRouter initialEntries={entries}>
           <HistoryControls />
           <App />
         </MemoryRouter>
@@ -223,7 +224,7 @@ it('valida e percorre as 12 etapas, preserva respostas e confirma a prévia ante
   click('Atualizar prévia')
   expect(await screen.findByRole('heading', { name: 'Reino da Aurora' })).toBeInTheDocument()
   click('CONFIRMAR FUNDAÇÃO')
-  const dashboard = () => screen.findByRole('heading', { name: 'República do Teste', level: 1 })
+  const dashboard = () => screen.findByRole('heading', { name: 'República do Teste', level: 2 })
   expect(await dashboard()).toBeInTheDocument()
   fireEvent.click(screen.getByRole('link', { name: 'Abrir formulário de fundação' }))
   expect(await dashboard()).toBeInTheDocument()
@@ -258,10 +259,17 @@ it('abre o painel ao visitar diretamente o formulário com uma nação ativa', a
   hasNation = true
   renderWizard()
   expect(
-    await screen.findByRole('heading', { name: 'República do Teste', level: 1 }),
+    await screen.findByRole('heading', { name: 'República do Teste', level: 2 }),
   ).toBeInTheDocument()
   expect(screen.queryByRole('heading', { name: 'Fundação de nação' })).not.toBeInTheDocument()
   expect(invoke).not.toHaveBeenCalled()
+})
+
+it('envia ao formulário ao abrir um novo módulo sem nação ativa', async () => {
+  renderWizard(['/economia'])
+  expect(await screen.findByRole('heading', { name: 'Fundação de nação' })).toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: 'Economia' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('navigation', { name: 'Seções do jogo' })).not.toBeInTheDocument()
 })
 
 it('exibe conflito do servidor ao validar nome e mantém a etapa para correção', async () => {

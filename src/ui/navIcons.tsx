@@ -8,17 +8,19 @@ import {
   Newspaper,
   ScrollText,
   Shield,
+  TrainFront,
   Users,
   type LucideIcon,
 } from 'lucide-react'
-import type { NavItem } from '@/domain/nav'
+import type { NavId } from '@/domain/nav'
 
-export const NAV_ICONS: Record<NavItem['icon'], LucideIcon> = {
+export const NAV_ICONS: Record<NavId, LucideIcon> = {
   overview: LayoutDashboard,
   map: MapIcon,
   government: Landmark,
   economy: Coins,
   society: Users,
+  infrastructure: TrainFront,
   diplomacy: Handshake,
   military: Shield,
   press: Newspaper,
