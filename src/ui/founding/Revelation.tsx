@@ -16,10 +16,7 @@ export function Revelation({ preview, draft }: { preview: FoundingPreview; draft
   ]
   return (
     <div className="space-y-6">
-      <div
-        className="founding-reveal rounded-xl border border-line px-4 py-8 text-center"
-        style={{ borderTop: `4px solid ${draft.symbols.color}` }}
-      >
+      <div className="founding-reveal rounded-xl px-4 py-8 text-center">
         {(draft.symbols.flag || draft.symbols.coatOfArms) && <SymbolImages {...draft.symbols} />}
         <h3 className="title mt-4 break-words text-4xl sm:text-6xl">{preview.officialName}</h3>
         <p className="mt-3 text-muted">
@@ -28,7 +25,7 @@ export function Revelation({ preview, draft }: { preview: FoundingPreview; draft
       </div>
       <dl className="grid gap-2 sm:grid-cols-2">
         {stats.map(([label, value]) => (
-          <div key={label} className="rounded-lg border border-line bg-bg p-3">
+          <div key={label} className="rounded-lg bg-bg p-3">
             <dt className="text-sm text-muted">{label}</dt>
             <dd className="subtitle mt-1">{value}</dd>
           </div>

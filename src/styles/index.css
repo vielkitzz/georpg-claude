@@ -2,8 +2,8 @@
 
 /* Paleta oficial (seção 2). Os tokens semânticos abaixo trocam com data-theme. */
 :root {
-  --navy: #071c2a;
-  --deep: #002a45;
+  --navy: #03111a;
+  --deep: #071c2a;
   --coral: #ea444b;
   --coral-soft: #f98b87;
   --cream: #fefbee;
@@ -111,7 +111,6 @@ body {
 }
 
 .founding-panel {
-  border: 1px solid var(--line);
   border-radius: 1rem;
   background: color-mix(in srgb, var(--panel) 80%, var(--bg));
 }

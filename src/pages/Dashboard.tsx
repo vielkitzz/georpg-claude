@@ -12,7 +12,7 @@ import './nation-profile.css'
 
 type Overview = ReturnType<typeof nationOverview>
 const unavailable = 'Disponível quando o tick diário estiver ativo'
-const panel = 'profile-panel min-w-0 rounded-lg border border-line bg-panel p-4 sm:p-5'
+const panel = 'profile-panel min-w-0 rounded-lg bg-panel p-4 sm:p-5'
 const link =
   'inline-flex min-h-11 items-center text-sm font-semibold text-secondary underline underline-offset-4'
 
@@ -55,7 +55,7 @@ function SymbolImage({ value, name, width }: { value: string; name: string; widt
   const [failed, setFailed] = useState<string | null>(null)
   return (
     <div
-      className="grid h-28 max-w-full shrink-0 place-items-center overflow-hidden rounded-md border border-dashed border-line text-xs text-muted"
+      className="grid h-28 max-w-full shrink-0 place-items-center overflow-hidden rounded-md text-xs text-muted"
       style={{ width }}
     >
       {src && src !== failed ? (
@@ -100,7 +100,7 @@ export function ProfileHeader({
   return (
     <section
       aria-labelledby={id}
-      className={`${panel} profile-identity panel-mark flex flex-wrap items-center gap-6`}
+      className={`${panel} profile-identity flex flex-wrap items-center gap-6`}
     >
       <div className="flex max-w-full flex-wrap gap-2">
         <SymbolImage value={profile.symbols.flag} name="Bandeira" width={168} />
@@ -294,7 +294,7 @@ export function AlertCard({
 }) {
   const urgent = severidade === 'urgente'
   return (
-    <article className="rounded-md border border-line bg-bg/40 p-3">
+    <article className="rounded-md bg-bg/40 p-3">
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
         <span
           className={`inline-flex items-center gap-2 font-semibold ${urgent ? 'text-primary-text' : 'text-warning'}`}
@@ -356,7 +356,7 @@ function TerritoryPanel({
             role="img"
             aria-label={`Mapa do território nº ${territory.id}`}
             viewBox={box}
-            className="h-44 w-full rounded-md border border-line bg-[#071C2A]"
+            className="h-44 w-full rounded-md bg-[var(--navy)]"
           >
             {map.states
               .filter((state) => state.id !== territory.id)
@@ -399,7 +399,7 @@ function IdeologyPanel({ overview }: { overview: Overview }) {
             viewBox="0 0 160 160"
             role="img"
             aria-label={`Bússola ideológica: economia ${overview.compass.x}, autoridade ${overview.compass.y}`}
-            className="max-w-full rounded-md border border-line bg-bg/60"
+            className="max-w-full rounded-md bg-bg/60"
           >
             <path d="M12 80H148M80 12V148" stroke="var(--muted)" strokeOpacity=".5" />
             <circle

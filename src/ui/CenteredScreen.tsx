@@ -14,7 +14,7 @@ export function CenteredScreen({
   return (
     <div className="grid min-h-dvh place-items-center bg-bg p-6">
       <div className="flex w-full max-w-md flex-col items-start gap-5">
-        <div className="rounded-md bg-[#071C2A] p-2">
+        <div className="rounded-md bg-[var(--navy)] p-2">
           <Brand />
         </div>
         <h1 className="title text-4xl">{title}</h1>

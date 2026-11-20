@@ -22,11 +22,7 @@ export function NationPage({
 }
 
 export function EmptySection({ children }: { children: ReactNode }) {
-  return (
-    <p className="rounded-md border border-dashed border-line bg-bg/40 px-4 py-3 text-sm text-muted">
-      {children}
-    </p>
-  )
+  return <p className="rounded-md bg-bg/40 px-4 py-3 text-sm text-muted">{children}</p>
 }
 
 export function Facts({ items }: { items: readonly (readonly [string, string | null])[] }) {
@@ -55,7 +51,7 @@ export function IndicatorCards({
   return (
     <dl className={`grid gap-2 ${className}`}>
       {indicators.map((indicator) => (
-        <div key={indicator.label} className="rounded-md border border-line bg-bg/55 px-3">
+        <div key={indicator.label} className="rounded-md bg-bg/55 px-3">
           <Stat indicator={indicator} />
         </div>
       ))}

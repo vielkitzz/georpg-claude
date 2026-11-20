@@ -48,7 +48,7 @@ function Legislature({ chamber }: { chamber: Chamber }) {
   const { parties, elected, seats, name } = chamber
   const summary = summarizeParliament(parties)
   return (
-    <article className="space-y-3 rounded-md border border-line bg-bg/45 p-4">
+    <article className="space-y-3 rounded-md bg-bg/45 p-4">
       <h3 className="subtitle text-lg">{name || 'Câmara legislativa'}</h3>
       {(elected !== null || seats !== null) && (
         <p className="text-sm text-muted">

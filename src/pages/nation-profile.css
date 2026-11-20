@@ -17,10 +17,6 @@
   min-height: 10rem;
 }
 
-.panel-mark {
-  border-inline-start: 3px solid var(--primary);
-}
-
 @media (min-width: 25rem) {
   .profile-identity {
     min-height: 16rem;

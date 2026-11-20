@@ -6,7 +6,7 @@ import { INITIAL_VIEWPORT, panBy, screenToMap, zoomAt, type Viewport } from '@/d
 import type { TerritoryClaim } from '@/domain/types'
 
 /** Cores do mapa (seção 6): o mapa mantém o fundo escuro nos dois temas. */
-export const MAP_BACKGROUND = '#071C2A'
+export const MAP_BACKGROUND = '#03111a'
 export const MAP_UNOWNED = '#132134'
 const PROVINCE_LINE = 'rgba(254, 251, 238, 0.4)'
 const SELECTION = '#EA444B'
@@ -129,7 +129,7 @@ export function WorldMap({ claims, selectedId, onSelect, world = geography }: Pr
 
   return (
     <div
-      className="relative overflow-hidden rounded-lg border border-line"
+      className="relative overflow-hidden rounded-lg"
       style={{ background: MAP_BACKGROUND }}
     >
       <svg

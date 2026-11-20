@@ -165,7 +165,7 @@ function MenuLinks({
 function MenuHeader({ children }: { children?: ReactNode }) {
   return (
     <div className="flex h-16 shrink-0 items-center justify-between border-b border-line px-3 md:justify-center lg:justify-between">
-      <span className="rounded-md bg-[#071C2A] p-1.5 md:hidden lg:inline">
+      <span className="rounded-md bg-[var(--navy)] p-1.5 md:hidden lg:inline">
         <Brand />
       </span>
       <span className="hidden md:inline lg:hidden">

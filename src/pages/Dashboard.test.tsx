@@ -11,7 +11,7 @@ function route(node: React.ReactNode) {
   return render(<MemoryRouter>{node}</MemoryRouter>)
 }
 
-it('carrega uma bandeira HTTPS e usa espaços tracejados para texto e links inseguros', () => {
+it('carrega uma bandeira HTTPS e exibe o nome do símbolo para texto e links inseguros', () => {
   const profile = {
     ...profileFixture,
     symbols: {

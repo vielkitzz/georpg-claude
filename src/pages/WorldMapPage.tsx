@@ -32,7 +32,7 @@ export function WorldMapPage() {
         <div className="lg:sticky lg:top-20">
           <WorldMap claims={data} selectedId={selectedId} onSelect={setSelectedId} />
         </div>
-        <aside className="flex min-h-0 flex-col gap-3 rounded-lg border border-line bg-panel p-4 lg:max-h-[calc(100dvh-12rem)]">
+        <aside className="flex min-h-0 flex-col gap-3 rounded-lg bg-panel p-4 lg:max-h-[calc(100dvh-12rem)]">
           <h2 className="title-semi text-xl">Territórios</h2>
           <TerritoryList
             territories={geography.states}

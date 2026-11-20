@@ -43,7 +43,7 @@ describe('WorldMap', () => {
 
   it('fronteiras entre estados usam a cor do fundo', () => {
     const { container } = render(<Harness />)
-    expect(territoryPath(container, 1).getAttribute('stroke')).toBe('#071C2A')
+    expect(territoryPath(container, 1).getAttribute('stroke')).toBe('#03111a')
   })
 
   it('traços não escalam com o zoom', () => {
