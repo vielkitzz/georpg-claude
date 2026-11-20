@@ -5,6 +5,7 @@ import { App } from '@/App'
 import { RepositoryProvider } from '@/data/RepositoryProvider'
 import { demoRepository } from '@/data/demo'
 import { FakeAuth } from '@/test/auth'
+import { profileFixture } from '@/test/nation-profile'
 import { QUESTIONS } from '@/domain/ideology'
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }))
@@ -71,7 +72,8 @@ const stage = (index: number, title: string) => {
 beforeEach(() => {
   hasNation = false
   invoke.mockReset()
-  invoke.mockImplementation(async (_name, { body }) => {
+  invoke.mockImplementation(async (name, { body }) => {
+    if (name === 'my-nation-profile') return { data: hasNation ? profileFixture : null }
     if (body.action === 'check') return { data: { available: true } }
     if (body.action === 'preview')
       return {
@@ -225,7 +227,7 @@ it('valida e percorre as 12 etapas, preserva respostas e confirma a prévia ante
   expect(await screen.findByRole('heading', { name: 'Reino da Aurora' })).toBeInTheDocument()
   click('CONFIRMAR FUNDAÇÃO')
   const dashboard = () =>
-    screen.findByRole('heading', { name: 'República do Teste', level: 2 }, { timeout: 4_000 })
+    screen.findByRole('heading', { name: 'República do Teste', level: 1 }, { timeout: 4_000 })
   expect(await dashboard()).toBeInTheDocument()
   fireEvent.click(screen.getByRole('link', { name: 'Abrir formulário de fundação' }))
   expect(await dashboard()).toBeInTheDocument()
@@ -233,7 +235,7 @@ it('valida e percorre as 12 etapas, preserva respostas e confirma a prévia ante
   click('Voltar no histórico')
   expect(await dashboard()).toBeInTheDocument()
   expect(screen.queryByRole('heading', { name: 'Fundação de nação' })).not.toBeInTheDocument()
-  expect(invoke).toHaveBeenLastCalledWith('found-nation', {
+  expect(invoke).toHaveBeenCalledWith('found-nation', {
     body: expect.objectContaining({
       action: 'confirm',
       token: 'server-preview',
@@ -260,10 +262,10 @@ it('abre o painel ao visitar diretamente o formulário com uma nação ativa', a
   hasNation = true
   renderWizard()
   expect(
-    await screen.findByRole('heading', { name: 'República do Teste', level: 2 }),
+    await screen.findByRole('heading', { name: 'República do Teste', level: 1 }),
   ).toBeInTheDocument()
   expect(screen.queryByRole('heading', { name: 'Fundação de nação' })).not.toBeInTheDocument()
-  expect(invoke).not.toHaveBeenCalled()
+  expect(invoke.mock.calls.some(([name]) => name === 'found-nation')).toBe(false)
 })
 
 it('envia ao formulário ao abrir um novo módulo sem nação ativa', async () => {

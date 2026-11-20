@@ -4,6 +4,14 @@ import { MemoryRouter, Outlet, useLocation } from 'react-router'
 
 // Route integration tests use demo data; nation authorization is tested separately.
 vi.mock('./auth/RequireNation', () => ({ RequireNation: () => <Outlet /> }))
+vi.mock('./data/get-my-nation-profile', async (load) => {
+  const actual = await load<typeof import('./data/get-my-nation-profile')>()
+  const { profileFixture } = await import('./test/nation-profile')
+  return {
+    ...actual,
+    myNationProfileQuery: { ...actual.myNationProfileQuery, queryFn: async () => profileFixture },
+  }
+})
 import { App } from './App'
 import type { AuthValue } from './auth/AuthContext'
 import { RepositoryProvider } from './data/RepositoryProvider'
@@ -43,7 +51,7 @@ describe('App com acesso liberado', () => {
   it('a visão geral mostra a nação de demonstração', async () => {
     renderAt('/')
     expect(
-      await screen.findByRole('heading', { level: 2, name: 'República do Teste' }),
+      await screen.findByRole('heading', { level: 1, name: 'República do Teste' }),
     ).toBeInTheDocument()
     expect(
       await within(screen.getByRole('banner')).findByText('Janeiro de 1920'),
@@ -86,7 +94,10 @@ describe('App com acesso liberado', () => {
         const link = menu.getByRole('link', { name: route.label })
         fireEvent.click(link)
         expect(
-          await screen.findByRole('heading', { name: route.label, level: 1 }),
+          await screen.findByRole('heading', {
+            name: route.path === '/nacao' ? 'República do Teste' : route.label,
+            level: 1,
+          }),
         ).toBeInTheDocument()
         expect(link).toHaveAttribute('aria-current', 'page')
         expect(screen.getByTestId('address')).toHaveTextContent(route.path)
@@ -95,7 +106,7 @@ describe('App com acesso liberado', () => {
   }, 20_000)
 
   it.each([
-    ['/', '/nacao', 'Nação'],
+    ['/', '/nacao', 'República do Teste'],
     ['/mapa', '/mapa-mundial', 'Mapa Mundial'],
     ['/militar', '/defesa', 'Defesa'],
     ['/tecnologia', '/infraestrutura', 'Infraestrutura'],
@@ -148,24 +159,11 @@ describe('App com acesso liberado', () => {
     expect(screen.queryByRole('heading', { name: 'Notícias nacionais' })).not.toBeInTheDocument()
   })
 
-  it('mostra a aprovação atual e omite o gráfico quando há uma única medição', async () => {
-    const nation = await demoRepository.getNation()
-    if (!nation) throw new Error('A nação de teste é necessária')
-    renderAt(
-      '/',
-      {},
-      {
-        ...demoRepository,
-        getNation: async () => ({
-          ...nation,
-          approvalHistory: [54],
-          news: [],
-        }),
-      },
-    )
-    expect(await screen.findByText(/Aprovação atual de 54%/)).toBeInTheDocument()
+  it('mostra a aprovação atual sem simular histórico de turnos', async () => {
+    renderAt('/')
+    expect(await screen.findByText('54%')).toBeInTheDocument()
     expect(screen.queryByRole('img', { name: /aprovação nos últimos/i })).not.toBeInTheDocument()
-    expect(screen.getByText(/ainda não tem notícias publicadas/)).toBeInTheDocument()
+    expect(screen.getByText(/Os alertas passam a aparecer quando as ordens/)).toBeInTheDocument()
   })
 
   it('"Sair" encerra a sessão e leva a /login', async () => {
@@ -204,7 +202,7 @@ describe('guarda de acesso', () => {
   it('logado e dentro do servidor, /login volta para a visão geral', async () => {
     renderAt('/login')
     expect(
-      await screen.findByRole('heading', { level: 2, name: 'República do Teste' }),
+      await screen.findByRole('heading', { level: 1, name: 'República do Teste' }),
     ).toBeInTheDocument()
   })
 

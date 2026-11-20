@@ -87,6 +87,7 @@ export function prepareFounding(draft: unknown, tick: number) {
     seed: `${name.key}:${input.territoryId}`,
     ideology,
     legitimacy,
+    legitimacyPenalty: -coherence.penalty,
   })
   const year = simulationDateAt(tick).year
   const fields = {
@@ -124,7 +125,9 @@ export function prepareFounding(draft: unknown, tick: number) {
       ministries,
       chambers,
       ideologyScores: scores,
+      ideologyAnswers: answers,
       coherencePenalty: coherence.penalty,
+      events: [{ type: 'fundacao', title: `Fundação de ${name.officialName}`, tickIndex: tick }],
     },
     p_economy: economy,
     p_society: { approval },

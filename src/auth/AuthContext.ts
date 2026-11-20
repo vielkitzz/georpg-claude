@@ -5,6 +5,7 @@ export type UserRole = 'ADMIN' | 'PLAYER'
 
 export interface AuthValue {
   auth: AuthStatus
+  userId?: string
   guild: GuildCheck
   player: Player | null
   /** Papel do perfil (lido do banco, só do próprio usuário); null até carregar. */

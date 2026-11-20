@@ -1,0 +1,43 @@
+.profile-identity {
+  min-height: 23rem;
+}
+.profile-stat {
+  min-height: 9rem;
+}
+.profile-sheet {
+  min-height: 10rem;
+}
+.profile-facts {
+  min-height: 41rem;
+}
+.profile-visual {
+  min-height: 26rem;
+}
+.profile-events {
+  min-height: 10rem;
+}
+
+.panel-mark {
+  border-inline-start: 3px solid var(--primary);
+}
+
+@media (min-width: 25rem) {
+  .profile-identity {
+    min-height: 16rem;
+  }
+}
+
+@media (min-width: 40rem) {
+  .profile-identity {
+    min-height: 12rem;
+  }
+  .profile-facts {
+    min-height: 28rem;
+  }
+}
+
+@media (min-width: 64rem) {
+  .profile-facts {
+    min-height: 22rem;
+  }
+}

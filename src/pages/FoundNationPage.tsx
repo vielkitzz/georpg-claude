@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { useQueryClient } from '@tanstack/react-query'
+import { myNationProfileQuery } from '@/data/get-my-nation-profile'
 import { useAuth } from '@/auth/AuthContext'
 import { checkFounding, confirmFounding, drawQuiz, previewFounding } from '@/data/foundingApi'
 import {
@@ -94,6 +96,7 @@ function normalizeCurrencyCode(value: string) {
 
 export function FoundNationPage() {
   const navigate = useNavigate()
+  const queries = useQueryClient()
   const { role } = useAuth()
   const [draft, setDraft] = useState(initialDraft)
   const [step, setStep] = useState(0)
@@ -232,7 +235,10 @@ export function FoundNationPage() {
       setError(result)
       if (result.code === 'preview' || result.code === 'name' || result.code === 'territory')
         setPreview(null)
-    } else navigate('/nacao', { replace: true })
+    } else {
+      await queries.invalidateQueries({ queryKey: myNationProfileQuery.queryKey })
+      navigate('/nacao', { replace: true })
+    }
     setBusy(false)
   }
 

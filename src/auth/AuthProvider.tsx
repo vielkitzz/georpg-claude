@@ -108,6 +108,7 @@ export function AuthProvider({
         : { status: 'checking' }
     return {
       auth,
+      userId,
       guild,
       player: session ? playerFromIdentities(session.user.identities) : null,
       role: userId && roleResult?.userId === userId ? roleResult.role : null,

@@ -4,6 +4,7 @@ import { useAuth } from '@/auth/AuthContext'
 import { useWorldState } from '@/data/hooks'
 import { formatSimulationDate, simulationDateAt } from '@/domain/time'
 import { ThemeToggle } from './ThemeToggle'
+import { NextTick } from './NextTick'
 
 function SimulationDate() {
   const world = useWorldState()
@@ -30,7 +31,7 @@ export function Topbar({ menuOpen, onOpenMenu }: { menuOpen: boolean; onOpenMenu
     navigate('/login')
   }
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center gap-2 border-b border-line bg-bg/95 px-3 backdrop-blur sm:gap-3 sm:px-4 md:px-6">
+    <header className="sticky top-0 z-20 flex min-h-16 flex-wrap items-center gap-2 border-b border-line bg-bg/95 px-3 py-1 backdrop-blur sm:flex-nowrap sm:gap-3 sm:px-4 md:px-6">
       <button
         type="button"
         onClick={onOpenMenu}
@@ -38,7 +39,7 @@ export function Topbar({ menuOpen, onOpenMenu }: { menuOpen: boolean; onOpenMenu
         aria-expanded={menuOpen}
         aria-controls="menu-lateral"
         aria-haspopup="dialog"
-        className="grid size-10 place-items-center rounded-md hover:bg-raised md:hidden"
+        className="grid size-11 place-items-center rounded-md hover:bg-raised md:hidden"
       >
         <Menu size={22} aria-hidden />
       </button>
@@ -56,13 +57,16 @@ export function Topbar({ menuOpen, onOpenMenu }: { menuOpen: boolean; onOpenMenu
               {name.charAt(0).toUpperCase()}
             </span>
           )}
-          <span className="sr-only max-w-32 truncate text-sm sm:not-sr-only">{name}</span>
+          <div>
+            <span className="sr-only block max-w-32 truncate text-sm sm:not-sr-only">{name}</span>
+            <NextTick />
+          </div>
         </div>
         <button
           type="button"
           onClick={() => void leave()}
           aria-label="Sair"
-          className="flex h-10 items-center gap-2 rounded-md px-2.5 text-sm hover:bg-raised sm:px-3"
+          className="flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-md px-2.5 text-sm hover:bg-raised sm:px-3"
         >
           <LogOut size={18} aria-hidden />
           <span className="hidden sm:inline">Sair</span>

@@ -2,6 +2,8 @@ import type { ComponentType } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router'
 import { RequireAccess } from '@/auth/RequireAccess'
 import { RequireNation } from '@/auth/RequireNation'
+import { useAuth } from '@/auth/AuthContext'
+import { PlayerQueries } from '@/data/PlayerQueries'
 import { LEGACY_ROUTES, NAV_ITEMS, type NavId } from '@/domain/nav'
 import { ComingSoon } from '@/pages/ComingSoon'
 import { DashboardPage } from '@/pages/Dashboard'
@@ -37,7 +39,7 @@ function GameRedirect({ pathname }: { pathname: string }) {
   return <Navigate to={{ pathname, search, hash }} replace />
 }
 
-export function App() {
+function AppRoutes() {
   return (
     <Routes>
       <Route element={<RequireAccess />}>
@@ -78,5 +80,14 @@ export function App() {
         }
       />
     </Routes>
+  )
+}
+
+export function App() {
+  const { userId, auth } = useAuth()
+  return (
+    <PlayerQueries key={userId ?? auth}>
+      <AppRoutes />
+    </PlayerQueries>
   )
 }
