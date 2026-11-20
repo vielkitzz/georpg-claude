@@ -14,15 +14,16 @@ export function App() {
   return (
     <Routes>
       <Route element={<RequireAccess />}>
-        <Route path="criar-pais" element={<RequireNation mode="founding" />}>
+        {/* Revalida a posse ao alternar entre fundação e jogo, inclusive após confirmar. */}
+        <Route path="criar-pais" element={<RequireNation key="founding" mode="founding" />}>
           <Route index element={<FoundNationPage />} />
         </Route>
-        <Route element={<RequireNation mode="game" />}>
+        <Route element={<RequireNation key="game" mode="game" />}>
           <Route element={<AppShell />}>
-          <Route index element={<DashboardPage />} />
-          <Route path="mapa" element={<WorldMapPage />} />
-          <Route path="governo" element={<GovernmentPage />} />
-          <Route path="teste-quiz" element={<QuizPreviewPage />} />
+            <Route index element={<DashboardPage />} />
+            <Route path="mapa" element={<WorldMapPage />} />
+            <Route path="governo" element={<GovernmentPage />} />
+            <Route path="teste-quiz" element={<QuizPreviewPage />} />
           </Route>
         </Route>
       </Route>

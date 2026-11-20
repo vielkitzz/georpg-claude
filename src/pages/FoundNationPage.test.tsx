@@ -1,31 +1,55 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, Route, Routes } from 'react-router'
+import { Link, MemoryRouter, useNavigate } from 'react-router'
+import { App } from '@/App'
+import { RepositoryProvider } from '@/data/RepositoryProvider'
 import { FakeAuth } from '@/test/auth'
 import { QUESTIONS } from '@/domain/ideology'
-import { FoundNationPage } from './FoundNationPage'
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }))
+let hasNation = false
 vi.mock('@/auth/supabase', () => ({
   getSupabase: () => ({
+    auth: { getUser: async () => ({ data: { user: { id: 'jogador' } }, error: null }) },
     functions: { invoke },
-    from: () => ({
-      select: async () => ({
-        data: [{ territory_id: 2, nation_id: 'id', name: 'Ocupado', color: '#123456' }],
-      }),
+    from: (table: string) => ({
+      select: () =>
+        table === 'nations'
+          ? {
+              eq: () => ({
+                eq: () => ({
+                  limit: async () => ({ data: hasNation ? [{ id: '123' }] : [], error: null }),
+                }),
+              }),
+            }
+          : Promise.resolve({
+              data: [{ territory_id: 2, nation_id: 'id', name: 'Ocupado', color: '#123456' }],
+            }),
     }),
   }),
 }))
 
+function HistoryControls() {
+  const navigate = useNavigate()
+  return (
+    <div>
+      <Link to="/criar-pais">Abrir formulário de fundação</Link>
+      <button type="button" onClick={() => void navigate(-1)}>
+        Voltar no histórico
+      </button>
+    </div>
+  )
+}
+
 function renderWizard(role: 'PLAYER' | 'ADMIN' = 'PLAYER') {
   render(
     <FakeAuth value={{ role }}>
-      <MemoryRouter initialEntries={['/criar-pais']}>
-        <Routes>
-          <Route path="/criar-pais" element={<FoundNationPage />} />
-          <Route path="/" element={<h1>Painel da nação</h1>} />
-        </Routes>
-      </MemoryRouter>
+      <RepositoryProvider>
+        <MemoryRouter initialEntries={['/criar-pais', '/criar-pais']}>
+          <HistoryControls />
+          <App />
+        </MemoryRouter>
+      </RepositoryProvider>
     </FakeAuth>,
   )
 }
@@ -44,6 +68,7 @@ const stage = (index: number, title: string) => {
 }
 
 beforeEach(() => {
+  hasNation = false
   invoke.mockReset()
   invoke.mockImplementation(async (_name, { body }) => {
     if (body.action === 'check') return { data: { available: true } }
@@ -63,14 +88,15 @@ beforeEach(() => {
           },
         },
       }
+    hasNation = true
     return { data: { nationId: '123' } }
   })
 })
 
 it('valida e percorre as 12 etapas, preserva respostas e confirma a prévia antes de abrir o painel', async () => {
   renderWizard()
-  stage(1, 'Território')
   const territory = await screen.findByRole('combobox', { name: 'Escolher território' })
+  stage(1, 'Território')
   expect(within(territory).getByRole('option', { name: /Território 2 .*ocupado/ })).toBeDisabled()
   next()
   expect(screen.getByRole('alert')).toHaveTextContent('Selecione um território livre')
@@ -197,7 +223,14 @@ it('valida e percorre as 12 etapas, preserva respostas e confirma a prévia ante
   click('Atualizar prévia')
   expect(await screen.findByRole('heading', { name: 'Reino da Aurora' })).toBeInTheDocument()
   click('CONFIRMAR FUNDAÇÃO')
-  expect(await screen.findByRole('heading', { name: 'Painel da nação' })).toBeInTheDocument()
+  const dashboard = () => screen.findByRole('heading', { name: 'República do Teste', level: 1 })
+  expect(await dashboard()).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('link', { name: 'Abrir formulário de fundação' }))
+  expect(await dashboard()).toBeInTheDocument()
+  click('Voltar no histórico')
+  click('Voltar no histórico')
+  expect(await dashboard()).toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: 'Fundação de nação' })).not.toBeInTheDocument()
   expect(invoke).toHaveBeenLastCalledWith('found-nation', {
     body: expect.objectContaining({
       action: 'confirm',
@@ -220,6 +253,16 @@ it('valida e percorre as 12 etapas, preserva respostas e confirma a prévia ante
     }),
   })
 }, 15_000)
+
+it('abre o painel ao visitar diretamente o formulário com uma nação ativa', async () => {
+  hasNation = true
+  renderWizard()
+  expect(
+    await screen.findByRole('heading', { name: 'República do Teste', level: 1 }),
+  ).toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: 'Fundação de nação' })).not.toBeInTheDocument()
+  expect(invoke).not.toHaveBeenCalled()
+})
 
 it('exibe conflito do servidor ao validar nome e mantém a etapa para correção', async () => {
   renderWizard()
