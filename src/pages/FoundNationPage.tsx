@@ -161,7 +161,7 @@ export function FoundNationPage() {
     setPreview(null)
     setError(null)
     const result = await previewFounding(payload)
-    if ('error' in result && result.code === 'owned') navigate('/', { replace: true })
+    if ('error' in result && result.code === 'owned') navigate('/nacao', { replace: true })
     else if ('error' in result) setError(result)
     else setPreview(result.preview)
     setBusy(false)
@@ -211,7 +211,7 @@ export function FoundNationPage() {
       setBusy(false)
       if ('error' in result) {
         if (result.code === 'owned') {
-          navigate('/', { replace: true })
+          navigate('/nacao', { replace: true })
           return
         }
         setError(result)
@@ -232,7 +232,7 @@ export function FoundNationPage() {
       setError(result)
       if (result.code === 'preview' || result.code === 'name' || result.code === 'territory')
         setPreview(null)
-    } else navigate('/', { replace: true })
+    } else navigate('/nacao', { replace: true })
     setBusy(false)
   }
 

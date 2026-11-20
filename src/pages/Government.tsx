@@ -111,8 +111,90 @@ function Legislature({ chamber }: { chamber: Chamber }) {
   )
 }
 
+export function InstitutionsPanel({ nation }: { nation: Nation }) {
+  const { government } = nation
+  return (
+    <Panel title="Instituições políticas">
+      <Facts
+        items={[
+          ['Forma de governo', government.form],
+          ['Regime', government.regime],
+          ['Sistema de governo', government.system],
+          ['Forma de Estado', government.stateForm],
+          ['Primeiro nível', government.firstLevelDivision],
+          ['Segundo nível', government.secondLevelDivision],
+          ['Governantes locais', government.localLeaders],
+        ]}
+      />
+    </Panel>
+  )
+}
+
+export function LeadershipPanels({ nation }: { nation: Nation }) {
+  const { stateHead, governmentHead } = nation.leadership
+  return (
+    <div className="grid content-start gap-5">
+      <Panel title="Chefia de Estado">
+        <Facts
+          items={[
+            ['Título', stateHead.title],
+            ['Titular', stateHead.name],
+            ['Base do cargo', stateHead.basis],
+          ]}
+        />
+      </Panel>
+      {governmentHead && (
+        <Panel title="Chefia de Governo">
+          <Facts
+            items={[
+              ['Título', governmentHead.title],
+              ['Titular', governmentHead.name],
+            ]}
+          />
+        </Panel>
+      )}
+    </div>
+  )
+}
+
+export function CabinetPanel({ nation }: { nation: Nation }) {
+  return (
+    <Panel title="Gabinete ministerial">
+      <Cabinet ministers={nation.ministries} />
+    </Panel>
+  )
+}
+
+export function LegislaturePanel({
+  nation,
+  partiesOnly = false,
+}: {
+  nation: Nation
+  partiesOnly?: boolean
+}) {
+  const chambers = partiesOnly
+    ? nation.chambers.filter((chamber) => chamber.parties.length > 0)
+    : nation.chambers
+  return (
+    <Panel title={partiesOnly ? 'Bancadas partidárias' : 'Parlamento'}>
+      {chambers.length ? (
+        <div className="grid gap-4">
+          {chambers.map((chamber, index) => (
+            <Legislature chamber={chamber} key={`${chamber.name}-${index}`} />
+          ))}
+        </div>
+      ) : (
+        <EmptySection>
+          {partiesOnly
+            ? 'As câmaras ainda não têm bancadas partidárias registradas.'
+            : 'A estrutura legislativa ainda não está registrada.'}
+        </EmptySection>
+      )}
+    </Panel>
+  )
+}
+
 function Government({ nation }: { nation: Nation }) {
-  const { government, leadership } = nation
   const approval = nation.approvalHistory.at(-1)
   const indicators = [
     ...(approval === undefined
@@ -124,66 +206,28 @@ function Government({ nation }: { nation: Nation }) {
   ]
   return (
     <div className="grid gap-5 lg:grid-cols-2">
-      <Panel title="Instituições políticas">
-        <Facts
-          items={[
-            ['Forma de governo', government.form],
-            ['Regime', government.regime],
-            ['Sistema de governo', government.system],
-            ['Forma de Estado', government.stateForm],
-            ['Primeiro nível', government.firstLevelDivision],
-            ['Segundo nível', government.secondLevelDivision],
-            ['Governantes locais', government.localLeaders],
-          ]}
-        />
-      </Panel>
-      <div className="grid content-start gap-5">
-        <Panel title="Chefia de Estado">
-          <Facts
-            items={[
-              ['Título', leadership.stateHead.title],
-              ['Titular', leadership.stateHead.name],
-              ['Base do cargo', leadership.stateHead.basis],
-            ]}
-          />
-        </Panel>
-        {leadership.governmentHead && (
-          <Panel title="Chefia de Governo">
-            <Facts
-              items={[
-                ['Título', leadership.governmentHead.title],
-                ['Titular', leadership.governmentHead.name],
-              ]}
-            />
-          </Panel>
-        )}
-      </div>
+      <InstitutionsPanel nation={nation} />
+      <LeadershipPanels nation={nation} />
       <Panel title="Aprovação e legitimidade" className="lg:col-span-2">
         <IndicatorCards
           indicators={indicators}
           empty="A aprovação e a legitimidade ainda não foram registradas."
         />
       </Panel>
-      <Panel title="Gabinete ministerial" className="lg:col-span-2">
-        <Cabinet ministers={nation.ministries} />
-      </Panel>
-      <Panel title="Parlamento" className="lg:col-span-2">
-        {nation.chambers.length > 0 ? (
-          <div className="grid gap-4">
-            {nation.chambers.map((chamber, index) => (
-              <Legislature chamber={chamber} key={`${chamber.name}-${index}`} />
-            ))}
-          </div>
-        ) : (
-          <EmptySection>A estrutura legislativa ainda não está registrada.</EmptySection>
-        )}
-      </Panel>
+      <div className="lg:col-span-2">
+        <CabinetPanel nation={nation} />
+      </div>
+      <div className="lg:col-span-2">
+        <LegislaturePanel nation={nation} />
+      </div>
     </div>
   )
 }
 
 export function GovernmentPage() {
   return (
-    <NationPage title="Governo e Política">{(nation) => <Government nation={nation} />}</NationPage>
+    <NationPage title="Governo" note="Instituições, liderança e composição política da nação.">
+      {(nation) => <Government nation={nation} />}
+    </NationPage>
   )
 }

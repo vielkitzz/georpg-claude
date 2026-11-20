@@ -1,19 +1,11 @@
-import { formatInteger, formatPercent } from '@/domain/format'
-import type { Indicator, Nation } from '@/domain/types'
-import { ApprovalChart } from '@/ui/ApprovalChart'
+import { nationalIndicators } from '@/domain/nationalIndicators'
+import type { Nation } from '@/domain/types'
 import { EmptySection, IndicatorCards, NationPage, NewsList } from '@/ui/NationPage'
 import { NextTick } from '@/ui/NextTick'
 import { Panel } from '@/ui/Panel'
+import { ApprovalHistory } from './Indicators'
 
 function Dashboard({ nation }: { nation: Nation }) {
-  const approval = nation.approvalHistory.at(-1)
-  const nationalIndicators: Indicator[] = []
-  if (nation.population !== null)
-    nationalIndicators.push({ label: 'População', value: formatInteger(nation.population) })
-  if (approval !== undefined)
-    nationalIndicators.push({ label: 'Aprovação do governo', value: formatPercent(approval) })
-  if (nation.legitimacy !== null)
-    nationalIndicators.push({ label: 'Legitimidade', value: `${nation.legitimacy}/100` })
   const facts = [
     ['Capital', nation.capital],
     ['Moeda', [nation.currency.name, nation.currency.code].filter(Boolean).join(' · ')],
@@ -46,7 +38,7 @@ function Dashboard({ nation }: { nation: Nation }) {
 
       <Panel title="Indicadores nacionais">
         <IndicatorCards
-          indicators={nationalIndicators}
+          indicators={nationalIndicators(nation)}
           empty="A população, a aprovação e a legitimidade ainda não têm registros."
         />
       </Panel>
@@ -59,15 +51,7 @@ function Dashboard({ nation }: { nation: Nation }) {
           />
         </Panel>
         <Panel title="Histórico de aprovação">
-          {nation.approvalHistory.length > 1 ? (
-            <ApprovalChart values={nation.approvalHistory} />
-          ) : (
-            <EmptySection>
-              {approval !== undefined
-                ? `Aprovação atual de ${formatPercent(approval)}. São necessárias duas medições para exibir o gráfico.`
-                : 'A aprovação do governo ainda não foi registrada.'}
-            </EmptySection>
-          )}
+          <ApprovalHistory values={nation.approvalHistory} />
         </Panel>
         <Panel title="Boletim nacional">
           <NewsList items={nation.news} />
@@ -83,5 +67,9 @@ function Dashboard({ nation }: { nation: Nation }) {
 }
 
 export function DashboardPage() {
-  return <NationPage title="Painel Geral">{(nation) => <Dashboard nation={nation} />}</NationPage>
+  return (
+    <NationPage title="Nação" note="Identidade, indicadores e atividade nacional.">
+      {(nation) => <Dashboard nation={nation} />}
+    </NationPage>
+  )
 }

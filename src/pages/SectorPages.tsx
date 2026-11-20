@@ -28,9 +28,9 @@ export function InfrastructurePage() {
   )
 }
 
-export function MilitaryPage() {
+export function DefensePage() {
   return (
-    <NationPage title="Forças Armadas" note="Organização da defesa, pessoal e recursos militares.">
+    <NationPage title="Defesa" note="Organização da defesa, pessoal e recursos militares.">
       {() => (
         <div className="grid gap-5 lg:grid-cols-2">
           <Panel title="Estrutura militar" className="lg:col-span-2">
@@ -51,40 +51,6 @@ export function MilitaryPage() {
           <Panel title="Orçamento de defesa">
             <EmptySection>
               A parcela do orçamento nacional destinada à defesa ainda não tem registro.
-            </EmptySection>
-          </Panel>
-        </div>
-      )}
-    </NationPage>
-  )
-}
-
-export function TechnologyPage() {
-  return (
-    <NationPage
-      title="Tecnologia e Pesquisa"
-      note="Atividade científica, instituições e projetos tecnológicos."
-    >
-      {() => (
-        <div className="grid gap-5 lg:grid-cols-2">
-          <Panel title="Panorama tecnológico" className="lg:col-span-2">
-            <Facts
-              items={[
-                ['Pesquisa científica', 'Sem registro de programas científicos'],
-                ['Desenvolvimento tecnológico', 'Sem registro de tecnologias desenvolvidas'],
-              ]}
-            />
-          </Panel>
-          <Panel title="Instituições de pesquisa">
-            <EmptySection>
-              Universidades, laboratórios e outros institutos de pesquisa ainda não têm cadastro
-              neste módulo.
-            </EmptySection>
-          </Panel>
-          <Panel title="Projetos e investimentos">
-            <EmptySection>
-              Projetos em andamento, etapas de pesquisa e recursos investidos aparecerão quando
-              houver registros.
             </EmptySection>
           </Panel>
         </div>

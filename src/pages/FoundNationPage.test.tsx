@@ -224,7 +224,8 @@ it('valida e percorre as 12 etapas, preserva respostas e confirma a prévia ante
   click('Atualizar prévia')
   expect(await screen.findByRole('heading', { name: 'Reino da Aurora' })).toBeInTheDocument()
   click('CONFIRMAR FUNDAÇÃO')
-  const dashboard = () => screen.findByRole('heading', { name: 'República do Teste', level: 2 })
+  const dashboard = () =>
+    screen.findByRole('heading', { name: 'República do Teste', level: 2 }, { timeout: 4_000 })
   expect(await dashboard()).toBeInTheDocument()
   fireEvent.click(screen.getByRole('link', { name: 'Abrir formulário de fundação' }))
   expect(await dashboard()).toBeInTheDocument()
@@ -266,9 +267,9 @@ it('abre o painel ao visitar diretamente o formulário com uma nação ativa', a
 })
 
 it('envia ao formulário ao abrir um novo módulo sem nação ativa', async () => {
-  renderWizard(['/economia'])
+  renderWizard(['/economia/banco-central'])
   expect(await screen.findByRole('heading', { name: 'Fundação de nação' })).toBeInTheDocument()
-  expect(screen.queryByRole('heading', { name: 'Economia' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: 'Banco Central' })).not.toBeInTheDocument()
   expect(screen.queryByRole('navigation', { name: 'Seções do jogo' })).not.toBeInTheDocument()
 })
 

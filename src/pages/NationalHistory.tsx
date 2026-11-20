@@ -1,12 +1,22 @@
 import { EmptySection, NationPage } from '@/ui/NationPage'
 import { Panel } from '@/ui/Panel'
 
+import type { Nation } from '@/domain/types'
+
+export function FoundationTimeline({ nation }: { nation: Nation }) {
+  return (
+    <ol className="border-l-2 border-secondary pl-4">
+      <li>
+        <span className="subtitle text-secondary">{nation.foundedYear}</span>
+        <p className="mt-1 text-sm">Fundação de {nation.officialName}</p>
+      </li>
+    </ol>
+  )
+}
+
 export function NationalHistoryPage() {
   return (
-    <NationPage
-      title="Histórico Nacional"
-      note="Fundação, memória nacional e mudanças institucionais."
-    >
+    <NationPage title="Histórico" note="Fundação, memória nacional e mudanças institucionais.">
       {(nation) => (
         <div className="grid gap-5 lg:grid-cols-2">
           <Panel title="Fundação da nação">
@@ -22,12 +32,7 @@ export function NationalHistoryPage() {
             )}
           </Panel>
           <Panel title="Linha do tempo">
-            <ol className="border-l-2 border-secondary pl-4">
-              <li>
-                <span className="subtitle text-secondary">{nation.foundedYear}</span>
-                <p className="mt-1 text-sm">Fundação de {nation.officialName}</p>
-              </li>
-            </ol>
+            <FoundationTimeline nation={nation} />
           </Panel>
           <Panel title="Eventos nacionais">
             <EmptySection>Não há outros eventos registrados na linha do tempo.</EmptySection>

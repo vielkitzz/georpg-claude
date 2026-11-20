@@ -2,7 +2,7 @@ import { useTerritoryClaims } from '@/data/hooks'
 import { EmptySection, Facts, NationPage } from '@/ui/NationPage'
 import { Panel } from '@/ui/Panel'
 
-function KnownCountries({ nationId }: { nationId: string }) {
+export function KnownCountries({ nationId }: { nationId: string }) {
   const claims = useTerritoryClaims()
   if (claims.status === 'loading')
     return (

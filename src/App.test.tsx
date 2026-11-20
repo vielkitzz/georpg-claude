@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, Outlet } from 'react-router'
+import { MemoryRouter, Outlet, useLocation } from 'react-router'
 
 // Route integration tests use demo data; nation authorization is tested separately.
 vi.mock('./auth/RequireNation', () => ({ RequireNation: () => <Outlet /> }))
@@ -12,6 +12,17 @@ import type { GameRepository } from './data/repository'
 import { NAV_ITEMS } from './domain/nav'
 import { FakeAuth } from './test/auth'
 
+function CurrentAddress() {
+  const { pathname, search, hash } = useLocation()
+  return (
+    <output data-testid="address">
+      {pathname}
+      {search}
+      {hash}
+    </output>
+  )
+}
+
 const renderAt = (
   path: string,
   auth: Partial<AuthValue> = {},
@@ -21,6 +32,7 @@ const renderAt = (
     <FakeAuth value={auth}>
       <RepositoryProvider repository={repository}>
         <MemoryRouter initialEntries={[path]}>
+          <CurrentAddress />
           <App />
         </MemoryRouter>
       </RepositoryProvider>
@@ -63,11 +75,56 @@ describe('App com acesso liberado', () => {
     renderAt('/')
     const menu = within(screen.getByRole('navigation', { name: 'Seções do jogo' }))
     for (const item of NAV_ITEMS) {
-      const link = menu.getByRole('link', { name: item.label })
-      fireEvent.click(link)
-      expect(await screen.findByRole('heading', { name: item.label, level: 1 })).toBeInTheDocument()
-      expect(link).toHaveAttribute('aria-current', 'page')
+      const routes = [
+        { label: item.label, path: item.path },
+        ...(item.children ?? []).map((child) => ({
+          label: child.label,
+          path: `${item.path}/${child.id}`,
+        })),
+      ]
+      for (const route of routes) {
+        const link = menu.getByRole('link', { name: route.label })
+        fireEvent.click(link)
+        expect(
+          await screen.findByRole('heading', { name: route.label, level: 1 }),
+        ).toBeInTheDocument()
+        expect(link).toHaveAttribute('aria-current', 'page')
+        expect(screen.getByTestId('address')).toHaveTextContent(route.path)
+      }
     }
+  }, 20_000)
+
+  it.each([
+    ['/', '/nacao', 'Nação'],
+    ['/mapa', '/mapa-mundial', 'Mapa Mundial'],
+    ['/militar', '/defesa', 'Defesa'],
+    ['/tecnologia', '/infraestrutura', 'Infraestrutura'],
+    ['/imprensa', '/historico/relatorios', 'Relatórios'],
+  ])('redireciona %s para %s e preserva consulta e fragmento', async (legacy, canonical, title) => {
+    renderAt(`${legacy}?origem=link#consulta`)
+    expect(await screen.findByRole('heading', { name: title, level: 1 })).toBeInTheDocument()
+    expect(screen.getByTestId('address').textContent).toBe(`${canonical}?origem=link#consulta`)
+  })
+
+  it('abre diretamente uma subpágina e apresenta seu estado contextual', async () => {
+    renderAt('/governo/eleicoes')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Eleições' })).toBeInTheDocument()
+    expect(
+      await screen.findByText(/O sistema de eleições será disponibilizado/),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Submenu de Governo' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
+  })
+
+  it('reaproveita a moeda registrada no Banco Central e o turno atual no Histórico', async () => {
+    renderAt('/economia/banco-central')
+    expect(await screen.findByText('TST', { exact: true })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Submenu de Histórico' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Turnos' }))
+    expect(await screen.findByRole('heading', { name: 'Turno atual' })).toBeInTheDocument()
+    expect(await screen.findByText('Turno registrado')).toBeInTheDocument()
   })
 
   it('apresenta estado vazio contextual quando a infraestrutura não tem registros', async () => {
@@ -121,11 +178,17 @@ describe('App com acesso liberado', () => {
   it('/criar-pais existe como rota', () => {
     renderAt('/criar-pais')
     expect(screen.getByRole('heading', { name: 'Fundação de nação' })).toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Seções do jogo' })).not.toBeInTheDocument()
   })
 })
 
 describe('guarda de acesso', () => {
-  it.each(NAV_ITEMS)('sem sessão, $path cai no login', ({ path }) => {
+  it.each(
+    NAV_ITEMS.flatMap((item) => [
+      item.path,
+      ...(item.children ?? []).map((child) => `${item.path}/${child.id}`),
+    ]),
+  )('sem sessão, %s cai no login', (path) => {
     renderAt(path, { auth: 'anon', guild: { status: 'idle' }, player: null })
     expect(screen.getByRole('heading', { name: 'Entrar no GeoRPG' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Entrar com o Discord' })).toBeInTheDocument()

@@ -4,7 +4,7 @@ import { Panel } from '@/ui/Panel'
 
 export function SocietyPage() {
   return (
-    <NationPage title="População e Sociedade" note="Demografia e indicadores sociais da nação.">
+    <NationPage title="Sociedade" note="Demografia e indicadores sociais da nação.">
       {(nation) => {
         const approval = nation.approvalHistory.at(-1)
         const indicators = [

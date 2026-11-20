@@ -1,35 +1,40 @@
-import { Route, Routes } from 'react-router'
 import type { ComponentType } from 'react'
+import { Navigate, Route, Routes, useLocation } from 'react-router'
 import { RequireAccess } from '@/auth/RequireAccess'
 import { RequireNation } from '@/auth/RequireNation'
-import { NAV_ITEMS, type NavId } from '@/domain/nav'
-import { FoundNationPage } from '@/pages/FoundNationPage'
+import { LEGACY_ROUTES, NAV_ITEMS, type NavId } from '@/domain/nav'
 import { ComingSoon } from '@/pages/ComingSoon'
 import { DashboardPage } from '@/pages/Dashboard'
 import { DiplomacyPage } from '@/pages/Diplomacy'
 import { EconomyPage } from '@/pages/Economy'
+import { FoundNationPage } from '@/pages/FoundNationPage'
 import { GovernmentPage } from '@/pages/Government'
+import { IndicatorsPage } from '@/pages/Indicators'
 import { LoginPage } from '@/pages/LoginPage'
 import { NationalHistoryPage } from '@/pages/NationalHistory'
-import { PressPage } from '@/pages/Press'
 import { QuizPreviewPage } from '@/pages/QuizPreviewPage'
-import { InfrastructurePage, MilitaryPage, TechnologyPage } from '@/pages/SectorPages'
+import { SectionDetailPage } from '@/pages/SectionDetails'
+import { DefensePage, InfrastructurePage } from '@/pages/SectorPages'
 import { SocietyPage } from '@/pages/Society'
 import { WorldMapPage } from '@/pages/WorldMapPage'
 import { AppShell } from '@/ui/AppShell'
 
 const pages: Record<NavId, ComponentType> = {
-  overview: DashboardPage,
+  nation: DashboardPage,
   map: WorldMapPage,
-  history: NationalHistoryPage,
+  indicators: IndicatorsPage,
   government: GovernmentPage,
   economy: EconomyPage,
   society: SocietyPage,
   infrastructure: InfrastructurePage,
-  military: MilitaryPage,
-  technology: TechnologyPage,
   diplomacy: DiplomacyPage,
-  press: PressPage,
+  defense: DefensePage,
+  history: NationalHistoryPage,
+}
+
+function GameRedirect({ pathname }: { pathname: string }) {
+  const { search, hash } = useLocation()
+  return <Navigate to={{ pathname, search, hash }} replace />
 }
 
 export function App() {
@@ -41,13 +46,24 @@ export function App() {
           <Route index element={<FoundNationPage />} />
         </Route>
         <Route element={<RequireNation key="game" mode="game" />}>
+          <Route index element={<GameRedirect pathname="/nacao" />} />
+          {Object.entries(LEGACY_ROUTES).map(([from, to]) => (
+            <Route key={from} path={from} element={<GameRedirect pathname={to} />} />
+          ))}
           <Route element={<AppShell />}>
-            {NAV_ITEMS.map(({ id, path }) => {
+            {NAV_ITEMS.map(({ id, path, children }) => {
               const Page = pages[id]
-              return path === '/' ? (
-                <Route key={id} index element={<Page />} />
-              ) : (
-                <Route key={id} path={path} element={<Page />} />
+              return (
+                <Route key={id} path={path}>
+                  <Route index element={<Page />} />
+                  {children?.map((page) => (
+                    <Route
+                      key={page.id}
+                      path={page.id}
+                      element={<SectionDetailPage page={page} />}
+                    />
+                  ))}
+                </Route>
               )
             })}
             <Route path="teste-quiz" element={<QuizPreviewPage />} />
