@@ -15,7 +15,7 @@ vi.mock('./data/get-my-nation-profile', async (load) => {
 import { App } from './App'
 import type { AuthValue } from './auth/AuthContext'
 import { RepositoryProvider } from './data/RepositoryProvider'
-import { demoRepository } from './data/demo'
+import { DEMO_NATION, demoRepository } from './data/demo'
 import type { GameRepository } from './data/repository'
 import { NAV_ITEMS } from './domain/nav'
 import { FakeAuth } from './test/auth'
@@ -160,9 +160,19 @@ describe('App com acesso liberado', () => {
   })
 
   it('mostra a aprovação atual sem simular histórico de turnos', async () => {
-    renderAt('/')
-    expect(await screen.findByText('54%')).toBeInTheDocument()
-    expect(screen.queryByRole('img', { name: /aprovação nos últimos/i })).not.toBeInTheDocument()
+    renderAt(
+      '/',
+      {},
+      {
+        ...demoRepository,
+        getNation: async () => ({ ...DEMO_NATION, approvalHistory: [54] }),
+      },
+    )
+    const approval = await screen.findByRole('button', { name: 'Sobre Aprovação' })
+    expect(
+      approval.closest('.profile-stat')?.querySelector('.profile-stat-value'),
+    ).toHaveTextContent('54%')
+    expect(screen.queryByRole('img', { name: 'Histórico de Aprovação' })).not.toBeInTheDocument()
     expect(screen.getByText(/Os alertas passam a aparecer quando as ordens/)).toBeInTheDocument()
   })
 
