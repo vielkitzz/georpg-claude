@@ -12,9 +12,9 @@ export function Panel({
   action?: ReactNode
 }) {
   return (
-    <section className={`min-w-0 rounded-lg border border-line bg-panel p-5 ${className}`}>
+    <section className={`min-w-0 rounded-lg bg-panel p-5 ${className}`}>
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="title-semi text-xl">{title}</h2>
+        <h2 className="title-semi min-w-0 text-xl wrap-break-word">{title}</h2>
         {action}
       </div>
       {children}

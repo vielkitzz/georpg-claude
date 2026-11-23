@@ -23,9 +23,12 @@ const renderAt = (path: string, auth: Partial<AuthValue> = {}) =>
 describe('App com acesso liberado', () => {
   it('a visão geral mostra a nação de demonstração', async () => {
     renderAt('/')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Nação' })).toBeInTheDocument()
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'República do Teste' }),
+      screen.getByRole('heading', { level: 2, name: 'República do Teste' }),
     ).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Indicadores' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Retrato ideológico' })).toBeInTheDocument()
     expect(
       await within(screen.getByRole('banner')).findByText('Janeiro de 1920'),
     ).toBeInTheDocument()
@@ -78,9 +81,7 @@ describe('guarda de acesso', () => {
 
   it('logado e dentro do servidor, /login volta para a visão geral', async () => {
     renderAt('/login')
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'República do Teste' }),
-    ).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Nação' })).toBeInTheDocument()
   })
 
   it('enquanto confere o servidor, mostra "verificando" e não o jogo', () => {

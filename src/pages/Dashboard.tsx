@@ -1,91 +1,88 @@
-import { Inbox } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
+import { geography } from '@/data/gauzoland'
+import { useWorldState } from '@/data/hooks'
+import { areaFromCells, areaRank, ideologyView } from '@/domain/nationView'
 import type { Nation } from '@/domain/types'
-import { formatPercent } from '@/domain/format'
-import { ApprovalChart } from '@/ui/ApprovalChart'
 import { NationGate } from '@/ui/NationGate'
-import { NextTick } from '@/ui/NextTick'
-import { Panel } from '@/ui/Panel'
-import { Stat } from '@/ui/Stat'
+import { AttentionPanel } from '@/ui/nation/AttentionPanel'
+import { BasicInfoPanel } from '@/ui/nation/BasicInfoPanel'
+import { IdeologyPanel } from '@/ui/nation/IdeologyPanel'
+import { IndicatorCard } from '@/ui/nation/IndicatorCard'
+import { NationCard } from '@/ui/nation/NationCard'
+import { NationHero } from '@/ui/nation/NationHero'
+import { TerritoryPanel } from '@/ui/nation/TerritoryPanel'
 
-function NationHeader({ nation }: { nation: Nation }) {
-  const facts: [string, string][] = [
-    ['Capital', nation.capital],
-    ['Moeda', `${nation.currency.code}, ${nation.currency.name}`],
-    ['Governo', `${nation.government.form}, ${nation.government.system}`],
-    ['Lema', nation.motto],
-  ]
+/** Atalho para a página de indicadores, que ainda não existe: segue o padrão "em breve" do menu. */
+function SeeMore() {
   return (
-    <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-      <div className="flex min-w-0 items-start gap-4">
-        <div
-          aria-hidden
-          className="mt-1 h-14 w-20 shrink-0 rounded-sm border border-line"
-          style={{ background: nation.nationalColor }}
-        />
-        <div className="min-w-0">
-          <h1 className="title text-3xl break-words sm:text-4xl md:text-5xl">
-            {nation.officialName}
-          </h1>
-          <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
-            {facts.map(([term, value]) => (
-              <div key={term} className="flex gap-2">
-                <dt className="text-muted">{term}</dt>
-                <dd>{value}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      </div>
-      <NextTick />
-    </div>
+    <span
+      aria-disabled="true"
+      title="Em breve"
+      className="mt-1 inline-flex cursor-not-allowed items-center gap-1 text-base text-nation-accent opacity-90"
+    >
+      Ver mais
+      <ChevronRight size={18} aria-hidden />
+    </span>
   )
 }
 
-function Dashboard({ nation }: { nation: Nation }) {
+function Overview({ nation }: { nation: Nation }) {
+  const world = useWorldState()
+  const tickIndex = world.status === 'ready' ? world.data.tickIndex : null
+
+  const territory = geography.states.find((state) => state.id === nation.territoryId)
+  const area = territory
+    ? {
+        km2: areaFromCells(territory.cells),
+        rank: areaRank(territory.id, geography.states),
+      }
+    : null
+  const divisions =
+    territory && territory.provinceIds.length > 0 ? territory.provinceIds.length : null
+  const ideology = ideologyView(nation.ideology, nation.ideologyScores)
+
+  const large = nation.indicators.slice(0, 3)
+  const small = nation.indicators.slice(3)
+
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6">
-      <NationHeader nation={nation} />
-
-      <Panel title="Indicadores nacionais">
-        <dl className="grid grid-cols-2 divide-line sm:grid-cols-3 lg:grid-cols-5 lg:divide-x">
-          {nation.indicators.map((indicator) => (
-            <Stat key={indicator.label} indicator={indicator} />
-          ))}
-        </dl>
-      </Panel>
-
-      <div className="grid gap-6 lg:grid-cols-5">
-        <Panel title="Aprovação do governo" className="lg:col-span-3">
-          <ApprovalChart values={nation.approvalHistory} />
-          <p className="mt-3 text-sm text-muted">
-            Legitimidade do regime:{' '}
-            <span className="text-fg">{formatPercent(nation.legitimacy)}</span>
-          </p>
-        </Panel>
-
-        <Panel title="Boletim" className="lg:col-span-2">
-          <ul className="flex flex-col gap-4">
-            {nation.news.map((item) => (
-              <li key={item.id}>
-                <p className="text-xs text-muted">{item.date}</p>
-                <p className="subtitle">{item.headline}</p>
-                <p className="text-sm text-muted">{item.summary}</p>
-              </li>
-            ))}
-          </ul>
-        </Panel>
-      </div>
-
-      <Panel title="Ordens">
-        <div className="flex items-center gap-3 text-muted">
-          <Inbox size={22} aria-hidden />
-          <p>Você ainda não emitiu nenhuma ordem neste tick.</p>
+    <div className="nation-page @container -m-4 min-h-[calc(100dvh-4rem)] bg-nation-bg p-4 text-nation-text md:-m-6 md:p-6">
+      <div className="mx-auto flex max-w-[1304px] flex-col gap-8">
+        <div className="pb-4">
+          <h1 className="font-title text-[44px] leading-none font-bold uppercase">Nação</h1>
+          <p className="mt-2 text-[13px] text-nation-muted">Seu país, em perspectiva.</p>
         </div>
-      </Panel>
+
+        <NationHero nation={nation} ideologyName={ideology?.name} />
+
+        <NationCard title="Indicadores" divider action={<SeeMore />}>
+          <div className="flex flex-col gap-8">
+            <div className="grid gap-6 @min-[800px]:grid-cols-3">
+              {large.map((indicator) => (
+                <IndicatorCard key={indicator.key} indicator={indicator} size="large" />
+              ))}
+            </div>
+            <div className="grid gap-6 @min-[560px]:grid-cols-2 @min-[960px]:grid-cols-4">
+              {small.map((indicator) => (
+                <IndicatorCard key={indicator.key} indicator={indicator} size="small" />
+              ))}
+            </div>
+          </div>
+        </NationCard>
+
+        <div className="grid gap-8 @min-[900px]:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <BasicInfoPanel nation={nation} area={area} divisions={divisions} />
+          <AttentionPanel alerts={nation.alerts} tickIndex={tickIndex} />
+        </div>
+
+        <div className="grid gap-8 @min-[900px]:grid-cols-2">
+          <TerritoryPanel nation={nation} />
+          <IdeologyPanel ideology={ideology} />
+        </div>
+      </div>
     </div>
   )
 }
 
 export function DashboardPage() {
-  return <NationGate>{(nation) => <Dashboard nation={nation} />}</NationGate>
+  return <NationGate>{(nation) => <Overview nation={nation} />}</NationGate>
 }

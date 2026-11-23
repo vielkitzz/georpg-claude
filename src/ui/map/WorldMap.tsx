@@ -2,11 +2,19 @@ import { Minus, Plus, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { geography } from '@/data/gauzoland'
 import type { WorldGeography } from '@/data/gauzoland'
-import { INITIAL_VIEWPORT, panBy, screenToMap, zoomAt, type Viewport } from '@/domain/map/viewport'
+import {
+  focusViewport,
+  INITIAL_VIEWPORT,
+  panBy,
+  screenToMap,
+  zoomAt,
+  type Viewport,
+} from '@/domain/map/viewport'
+import { fitViewBox, pathBounds } from '@/domain/nationView'
 import type { TerritoryClaim } from '@/domain/types'
 
 /** Cores do mapa (seção 6): o mapa mantém o fundo escuro nos dois temas. */
-export const MAP_BACKGROUND = '#071C2A'
+export const MAP_BACKGROUND = '#03111a'
 export const MAP_UNOWNED = '#132134'
 const PROVINCE_LINE = 'rgba(254, 251, 238, 0.4)'
 const SELECTION = '#EA444B'
@@ -17,13 +25,31 @@ interface Props {
   selectedId: number | null
   onSelect: (id: number | null) => void
   world?: WorldGeography
+  focusTerritoryId?: number
+  ariaLabel?: string
 }
 
-export function WorldMap({ claims, selectedId, onSelect, world = geography }: Props) {
+export function WorldMap({
+  claims,
+  selectedId,
+  onSelect,
+  world = geography,
+  focusTerritoryId,
+  ariaLabel = 'Mapa mundial de Gauzoland. Para navegar sem o mouse, use a lista de territórios.',
+}: Props) {
   const { width, height } = world.meta
-  const size = useMemo(() => ({ width, height }), [width, height])
+  const focus = world.states.find((state) => state.id === focusTerritoryId)
+  const centerAtEdges = Boolean(focus)
+  const size = useMemo(() => ({ width, height, centerAtEdges }), [width, height, centerAtEdges])
+  const homeViewport = useMemo(
+    () =>
+      focus
+        ? focusViewport(fitViewBox(pathBounds(focus.d), width / height), size)
+        : INITIAL_VIEWPORT,
+    [focus, height, size, width],
+  )
   const svgRef = useRef<SVGSVGElement>(null)
-  const [viewport, setViewport] = useState<Viewport>(INITIAL_VIEWPORT)
+  const [viewport, setViewport] = useState<Viewport>(homeViewport)
   const [renderScale, setRenderScale] = useState(0.6)
   const pointers = useRef(new Map<number, { x: number; y: number }>())
   const gesture = useRef({ moved: false, target: null as number | null, pinch: 0 })
@@ -128,15 +154,12 @@ export function WorldMap({ claims, selectedId, onSelect, world = geography }: Pr
   const labelSize = 12 / (viewport.k * renderScale)
 
   return (
-    <div
-      className="relative overflow-hidden rounded-lg border border-line"
-      style={{ background: MAP_BACKGROUND }}
-    >
+    <div className="relative overflow-hidden rounded-lg" style={{ background: MAP_BACKGROUND }}>
       <svg
         ref={svgRef}
         viewBox={`0 0 ${width} ${height}`}
         role="img"
-        aria-label="Mapa mundial de Gauzoland. Para navegar sem o mouse, use a lista de territórios."
+        aria-label={ariaLabel}
         className="block h-auto w-full touch-none select-none"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -235,7 +258,7 @@ export function WorldMap({ claims, selectedId, onSelect, world = geography }: Pr
           {
             label: 'Restaurar enquadramento',
             icon: RotateCcw,
-            action: () => setViewport(INITIAL_VIEWPORT),
+            action: () => setViewport(homeViewport),
           },
         ].map(({ label, icon: Icon, action }) => (
           <button

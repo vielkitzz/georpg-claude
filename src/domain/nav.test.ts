@@ -1,20 +1,47 @@
 import { NAV_ITEMS } from './nav'
 
-describe('NAV_ITEMS', () => {
-  it('tem as dez seções da Sidebar', () => {
-    expect(NAV_ITEMS).toHaveLength(10)
-  })
+const officialTree = {
+  '/nacao': [],
+  '/mapa-mundial': [],
+  '/indicadores': [],
+  '/governo': [
+    'executivo',
+    'congresso',
+    'partidos',
+    'leis',
+    'orcamento',
+    'eleicoes',
+    'administracao',
+  ],
+  '/economia': [
+    'politica-economica',
+    'tributacao',
+    'banco-central',
+    'divida-publica',
+    'setores-produtivos',
+    'comercio-exterior',
+  ],
+  '/sociedade': [
+    'saude',
+    'educacao',
+    'trabalho',
+    'previdencia',
+    'habitacao',
+    'seguranca-publica',
+    'meio-ambiente',
+  ],
+  '/infraestrutura': ['transportes', 'energia', 'saneamento', 'telecomunicacoes', 'obras'],
+  '/diplomacia': ['relacoes', 'tratados', 'organizacoes', 'embaixadas', 'sancoes'],
+  '/defesa': ['forcas-armadas', 'organizacao', 'equipamentos', 'operacoes', 'inteligencia'],
+  '/historico': ['acontecimentos', 'decisoes', 'turnos', 'relatorios'],
+}
 
-  it('não tem numeração nos rótulos', () => {
-    for (const item of NAV_ITEMS) expect(item.label).not.toMatch(/^\d/)
-  })
-
-  it('só Visão geral, Mapa e Governo existem por enquanto', () => {
-    const enabled = NAV_ITEMS.filter((item) => item.path).map((item) => item.path)
-    expect(enabled).toEqual(['/', '/mapa', '/governo'])
-  })
-
-  it('não oferece "Fundar nação" na Sidebar', () => {
-    expect(NAV_ITEMS.some((item) => /fundar|criar/i.test(item.label))).toBe(false)
-  })
+it('segue a ordem e a hierarquia oficiais, com dez itens e 39 subpáginas', () => {
+  expect(NAV_ITEMS.map((item) => item.path)).toEqual(Object.keys(officialTree))
+  expect(
+    Object.fromEntries(
+      NAV_ITEMS.map((item) => [item.path, item.children?.map((child) => child.id) ?? []]),
+    ),
+  ).toEqual(officialTree)
+  expect(NAV_ITEMS.flatMap((item) => item.children ?? [])).toHaveLength(39)
 })

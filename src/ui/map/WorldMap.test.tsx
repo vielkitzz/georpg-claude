@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
 import { geography } from '@/data/gauzoland'
+import { pathBounds } from '@/domain/nationView'
 import type { TerritoryClaim } from '@/domain/types'
 import { TerritoryList } from './TerritoryList'
 import { MAP_UNOWNED, WorldMap } from './WorldMap'
@@ -43,7 +44,7 @@ describe('WorldMap', () => {
 
   it('fronteiras entre estados usam a cor do fundo', () => {
     const { container } = render(<Harness />)
-    expect(territoryPath(container, 1).getAttribute('stroke')).toBe('#071C2A')
+    expect(territoryPath(container, 1).getAttribute('stroke')).toBe('#03111a')
   })
 
   it('traços não escalam com o zoom', () => {
@@ -87,5 +88,23 @@ describe('WorldMap', () => {
     for (const name of ['Aproximar', 'Afastar', 'Restaurar enquadramento']) {
       expect(screen.getByRole('button', { name })).toBeInTheDocument()
     }
+  })
+
+  it('centraliza o território, permite afastar e restaura a vista nacional', () => {
+    render(<WorldMap claims={claims} selectedId={3} onSelect={vi.fn()} focusTerritoryId={3} />)
+    const layer = screen.getByRole('img').querySelector('g')!
+    const initial = layer.getAttribute('transform')!
+    const [x, y, scale] = initial.match(/-?[\d.]+/g)!.map(Number)
+    const own = geography.states.find((state) => state.id === 3)!
+    const bounds = pathBounds(own.d)
+    expect(x + ((bounds.minX + bounds.maxX) / 2) * scale).toBeCloseTo(geography.meta.width / 2)
+    expect(y + ((bounds.minY + bounds.maxY) / 2) * scale).toBeCloseTo(geography.meta.height / 2)
+    expect(scale).toBeGreaterThan(1)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Afastar' }))
+    expect(layer.getAttribute('transform')).not.toBe(initial)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Restaurar enquadramento' }))
+    expect(layer.getAttribute('transform')).toBe(initial)
   })
 })

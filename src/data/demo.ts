@@ -1,19 +1,35 @@
+import { buildIndicators } from '@/domain/nationIndicators'
+import { currencyPrefix, deriveHdi } from '@/domain/nationView'
 import type { Nation, TerritoryClaim, WorldState } from '@/domain/types'
 
 /** Dados de demonstração da Fase 0 (nação "Teste"). Nada daqui vem do servidor. */
 export const DEMO_WORLD: WorldState = { tickIndex: 0 }
+
+/** Bandeira simples (duas faixas) para a demonstração, já como data URI. */
+const DEMO_FLAG = `data:image/svg+xml,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 164 116"><rect width="164" height="58" fill="#FEFBEE"/><rect y="58" width="164" height="58" fill="#F98B87"/></svg>',
+)}`
+
+const DEMO_CURRENCY = { code: 'TST', name: 'Teste' }
+const DEMO_APPROVAL_HISTORY = [54, 55, 57, 56, 59, 61, 60, 62, 59, 58, 59, 58]
 
 export const DEMO_NATION: Nation = {
   id: 'demo-teste',
   shortName: 'Teste',
   officialName: 'República do Teste',
   capital: 'Vila Nova',
-  currency: { code: 'TST', name: 'Teste' },
+  currency: DEMO_CURRENCY,
   nationalColor: '#F98B87',
   motto: 'Ordem e trabalho',
   territoryId: 3,
   foundedYear: 1920,
+  foundedMonth: 1,
+  foundedDay: 1,
   population: 1_000_000,
+  languages: ['Português'],
+  religion: 'Estado laico',
+  symbols: { flag: DEMO_FLAG },
+  ideology: 'liberal_classico',
   government: {
     form: 'República',
     regime: 'Democrático',
@@ -26,15 +42,35 @@ export const DEMO_NATION: Nation = {
   leadership: {
     stateHead: { title: 'Presidente', name: 'Álvaro Mendonça', basis: 'Eleito diretamente' },
   },
-  indicators: [
-    { label: 'População', value: '1.000.000', delta: 0.4 },
-    { label: 'PIB', value: 'TST 310 mi', delta: 1.2 },
-    { label: 'Aprovação', value: '58%', delta: -0.8 },
-    { label: 'Inflação', value: '3,1%', delta: 0.3, lowerIsBetter: true },
-    { label: 'Desemprego', value: '7,4%', delta: -0.2, lowerIsBetter: true },
-  ],
+  indicators: buildIndicators({
+    currencyPrefix: currencyPrefix(DEMO_CURRENCY),
+    legitimacy: 62,
+    approval: 58,
+    gdp: 310_000_000,
+    inflation: 3.1,
+    unemployment: 7.4,
+    hdi: deriveHdi(310),
+    deltas: {
+      legitimacy: 0.5,
+      approval: -0.8,
+      stability: 0.3,
+      gdp: 3_700_000,
+      inflation: 0.3,
+      unemployment: -0.2,
+      hdi: 0.002,
+    },
+    history: {
+      legitimacy: [58, 59, 59, 61, 61, 62],
+      approval: [61, 60, 62, 60, 59, 58],
+      stability: [64, 65, 64, 66, 66, 67],
+      gdp: [296, 299, 302, 304, 306, 310].map((value) => value * 1_000_000),
+      inflation: [2.6, 2.7, 2.9, 2.8, 2.8, 3.1],
+      unemployment: [8, 7.9, 7.8, 7.7, 7.6, 7.4],
+      hdi: [0.606, 0.607, 0.609, 0.61, 0.61, 0.612],
+    },
+  }),
   legitimacy: 62,
-  approvalHistory: [54, 55, 57, 56, 59, 61, 60, 62, 59, 58, 59, 58],
+  approvalHistory: DEMO_APPROVAL_HISTORY,
   ministries: [
     { office: 'Fazenda', name: 'Heitor Brandão', approval: 61 },
     { office: 'Guerra', name: 'Gen. Otávio Lacerda', approval: 55 },
@@ -72,6 +108,7 @@ export const DEMO_NATION: Nation = {
       summary: 'A União Conservadora pede debate antes da votação do orçamento da Guerra.',
     },
   ],
+  alerts: [],
 }
 
 export const DEMO_CLAIMS: TerritoryClaim[] = [

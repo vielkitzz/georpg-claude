@@ -1,33 +1,88 @@
 import { getSupabase } from '@/auth/supabase'
 import type { GameRepository } from './repository'
-import type { Nation, TerritoryClaim } from '@/domain/types'
+import { LABELS } from '@/domain/founding/options'
+import { buildIndicators } from '@/domain/nationIndicators'
+import { currencyPrefix, deriveHdi } from '@/domain/nationView'
+import { ARCHETYPES } from '@/domain/ideology'
+import type { ArchetypeId, AxisScores } from '@/domain/ideology'
+import type { IndicatorKey, Nation, TerritoryClaim } from '@/domain/types'
 
 type RecordData = Record<string, unknown>
 const obj = (v: unknown): RecordData => v && typeof v === 'object' && !Array.isArray(v) ? v as RecordData : {}
 const str = (v: unknown, fallback = ''): string => typeof v === 'string' ? v : fallback
 const num = (v: unknown): number => typeof v === 'number' && Number.isFinite(v) ? v : 0
 const list = (v: unknown): RecordData[] => Array.isArray(v) ? v.map(obj) : []
+const strings = (v: unknown): string[] => Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []
+const numbers = (v: unknown): number[] => Array.isArray(v) ? v.filter((x): x is number => typeof x === 'number' && Number.isFinite(x)) : []
+const optionalNum = (v: unknown): number | undefined => typeof v === 'number' && Number.isFinite(v) ? v : undefined
+const KEYS: IndicatorKey[] = ['legitimacy', 'approval', 'stability', 'gdp', 'inflation', 'unemployment', 'hdi']
 
-function mapNation(row: RecordData, modules: RecordData, color: string): Nation {
+function institutionLabel(value: unknown, labels: Record<string, string>) {
+  const label = str(value)
+  return Object.hasOwn(labels, label) ? labels[label] : label
+}
+
+async function resolveNationSymbols(
+  supabase: NonNullable<ReturnType<typeof getSupabase>>,
+  symbols: unknown,
+  ownerId: string,
+): Promise<Nation['symbols']> {
+  const stored = obj(symbols)
+  const resolve = async (value: unknown) => {
+    const source = str(value).trim()
+    const [owner, file, extra] = source.split('/')
+    if (owner === ownerId && extra === undefined && /^[a-f0-9]{64}\.png$/.test(file ?? '')) {
+      try {
+        const { data, error } = await supabase.storage.from('nation-symbols').createSignedUrl(source, 3600)
+        return error ? undefined : data?.signedUrl
+      } catch {
+        return undefined
+      }
+    }
+    if (/^(https?:\/\/|data:image\/)/i.test(source)) return source
+    return undefined
+  }
+  const [flag, coatOfArms] = await Promise.all([resolve(stored.flag), resolve(stored.coatOfArms)])
+  return { flag, coatOfArms }
+}
+/** Lê `{ chave: valor }` guardado no banco, mantendo só as chaves dos indicadores. */
+const byKey = <T>(v: unknown, read: (x: unknown) => T): Partial<Record<IndicatorKey, T>> =>
+  Object.fromEntries(KEYS.map(key => [key, read(obj(v)[key])]).filter(([, value]) => value !== undefined))
+
+function mapNation(row: RecordData, modules: RecordData, color: string, images: Nation['symbols']): Nation {
   const politics = obj(modules.politics)
   const economy = obj(modules.economy)
   const society = obj(modules.society)
   const chamber = list(politics.chambers)[0] ?? {}
-  const indicators = [
-    { label: 'PIB', value: num(economy.gdp).toLocaleString('pt-BR'), delta: 0 },
-    { label: 'PIB per capita', value: num(economy.gdpPerCapita).toLocaleString('pt-BR'), delta: 0 },
-    { label: 'Inflação', value: num(economy.inflation).toLocaleString('pt-BR') + '%', delta: 0, lowerIsBetter: true },
-    { label: 'Desemprego', value: num(economy.unemployment).toLocaleString('pt-BR') + '%', delta: 0, lowerIsBetter: true },
-    { label: 'Tesouro', value: num(economy.treasury).toLocaleString('pt-BR'), delta: 0 },
-  ]
+  const symbols = obj(row.symbols)
+  const currency = { code: str(row.currency_code), name: str(row.currency_name), symbol: str(symbols.currencySymbol) || undefined }
+  const legitimacy = num(politics.legitimacy)
+  const approval = num(society.approval)
+  const inflation = num(economy.inflation)
+  const unemployment = num(economy.unemployment)
+  const ideology = ARCHETYPES.some(a => a.id === politics.ideology) ? politics.ideology as ArchetypeId : undefined
+  // Estabilidade e IDH ainda não vêm do servidor: sem valor guardado, derivam dos demais indicadores.
+  const indicators = buildIndicators({
+    currencyPrefix: currencyPrefix(currency),
+    legitimacy, approval, inflation, unemployment, gdp: num(economy.gdp),
+    stability: optionalNum(society.stability),
+    hdi: optionalNum(society.hdi) ?? deriveHdi(num(economy.gdpPerCapita)),
+    history: byKey(society.history, numbers),
+    deltas: byKey(society.deltas, optionalNum),
+  })
   return {
     id: str(row.id), shortName: str(row.short_name), officialName: str(row.name),
-    capital: str(row.capital), currency: { code: str(row.currency_code), name: str(row.currency_name) },
+    capital: str(row.capital), currency,
     nationalColor: color, motto: str(row.motto), territoryId: num(row.region_id),
     foundedYear: num(row.founded_year), population: num(economy.population),
+    languages: strings(society.languages), religion: str(society.religion),
+    symbols: images,
+    ideology, ideologyScores: politics.ideologyScores ? politics.ideologyScores as AxisScores : undefined,
     government: {
-      form: str(politics.governmentForm), regime: str(politics.regime),
-      system: str(politics.system), stateForm: str(politics.stateForm),
+      form: institutionLabel(politics.governmentForm, LABELS.governmentForm),
+      regime: institutionLabel(politics.regime ?? row.regime, LABELS.regime),
+      system: institutionLabel(politics.system, LABELS.system),
+      stateForm: institutionLabel(politics.stateForm, LABELS.stateForm),
       firstLevelDivision: str(politics.firstLevel), secondLevelDivision: str(politics.secondLevel),
       localLeaders: str(politics.localSelection),
     },
@@ -42,7 +97,7 @@ function mapNation(row: RecordData, modules: RecordData, color: string): Nation 
         name: str(obj(politics.headOfGovernment).name),
       } } : {}),
     },
-    indicators, legitimacy: num(politics.legitimacy),
+    indicators, legitimacy,
     approvalHistory: [num(society.approval)],
     ministries: list(politics.ministries).map(m => ({
       office: str(m.office), name: str(m.name), approval: num(m.approval),
@@ -55,6 +110,7 @@ function mapNation(row: RecordData, modules: RecordData, color: string): Nation 
       })),
     },
     news: [],
+    alerts: [],
   }
 }
 
@@ -78,12 +134,13 @@ export const supabaseRepository: GameRepository = {
       .eq('owner_id', auth.user.id).eq('status', 'active').maybeSingle()
     if (error) throw error
     if (!nation) return null
-    const [{ data: modules, error: modulesError }, { data: claim, error: claimError }] = await Promise.all([
+    const [{ data: modules, error: modulesError }, { data: claim, error: claimError }, images] = await Promise.all([
       supabase.from('nation_modules').select('politics,economy,society').eq('nation_id', nation.id).single(),
       supabase.from('territory_claims').select('color').eq('nation_id', nation.id).maybeSingle(),
+      resolveNationSymbols(supabase, nation.symbols, auth.user.id),
     ])
     if (modulesError || claimError) throw modulesError ?? claimError
-    return mapNation(nation, modules ?? {}, claim?.color ?? '#EA444B')
+    return mapNation(nation, modules ?? {}, claim?.color ?? '#EA444B', images)
   },
   async getTerritoryClaims(): Promise<TerritoryClaim[]> {
     const { data, error } = await client().from('territory_claims').select('territory_id,nation_id,name,color')

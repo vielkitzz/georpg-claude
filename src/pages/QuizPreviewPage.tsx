@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { drawQuiz } from '@/data/foundingApi'
 import { useAuth } from '@/auth/AuthContext'
 import {
   LABELS,
@@ -11,14 +12,7 @@ import {
   type Regime,
   type StateForm,
 } from '@/domain/founding/options'
-import {
-  randomAnswers,
-  scoreQuiz,
-  topThree,
-  type Answer,
-  type Answers,
-  type ArchetypeId,
-} from '@/domain/ideology'
+import { scoreQuiz, topThree, type Answer, type Answers, type ArchetypeId } from '@/domain/ideology'
 import { PageTitle, Panel } from '@/ui/Panel'
 import { secondaryButton } from '@/ui/CenteredScreen'
 import { Quiz } from '@/ui/ideology/Quiz'
@@ -55,10 +49,6 @@ function Select<T extends string>({
   )
 }
 
-/**
- * Página TEMPORÁRIA para experimentar o questionário isolado (checkpoint do bloco A).
- * Será removida quando o assistente de fundação (bloco B) entrar.
- */
 export function QuizPreviewPage() {
   const { role } = useAuth()
   const [answers, setAnswers] = useState<Answers>({})
@@ -68,6 +58,8 @@ export function QuizPreviewPage() {
   const [regime, setRegime] = useState<Regime>('democratico')
   const [stateForm, setStateForm] = useState<StateForm>('unitario')
   const [local, setLocal] = useState<LocalSelection>('nomeados')
+  const [drawing, setDrawing] = useState(false)
+  const [drawError, setDrawError] = useState('')
 
   const scores = finished ? scoreQuiz(answers) : null
 
@@ -84,7 +76,19 @@ export function QuizPreviewPage() {
             setAnswers((current) => ({ ...current, [id]: answer }))
           }
           onFinish={() => setFinished(true)}
-          onRandomFill={role === 'ADMIN' ? () => setAnswers(randomAnswers()) : undefined}
+          busy={drawing}
+          onRandomFill={
+            role === 'ADMIN'
+              ? async () => {
+                  setDrawing(true)
+                  setDrawError('')
+                  const result = await drawQuiz()
+                  if ('error' in result) setDrawError(result.error)
+                  else setAnswers(result.answers)
+                  setDrawing(false)
+                }
+              : undefined
+          }
         />
       ) : (
         <div className="flex flex-col gap-6">
@@ -138,6 +142,11 @@ export function QuizPreviewPage() {
             Refazer o questionário
           </button>
         </div>
+      )}
+      {drawError && (
+        <p role="alert" className="text-warning">
+          {drawError}
+        </p>
       )}
     </div>
   )

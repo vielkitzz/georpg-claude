@@ -60,6 +60,84 @@
   --color-warning: var(--warning);
   --font-title: 'Imbue', 'Times New Roman', serif;
   --font-sans: 'Parkinsans', system-ui, sans-serif;
+  --font-script: 'Pinyon Script', 'Snell Roundhand', cursive;
+
+  /* Tokens da visão geral da nação (definidos em .nation-page). */
+  --color-nation-bg: var(--n-bg);
+  --color-nation-panel: var(--n-panel);
+  --color-nation-raised: var(--n-raised);
+  --color-nation-chip: var(--n-chip);
+  --color-nation-divider: var(--n-divider);
+  --color-nation-text: var(--n-text);
+  --color-nation-muted: var(--n-muted);
+  --color-nation-subtle: var(--n-subtle);
+  --color-nation-icon: var(--n-icon);
+  --color-nation-sea: var(--n-sea);
+  --color-nation-line: var(--n-line);
+  --color-nation-track: var(--n-track);
+  --color-nation-positive: var(--n-positive);
+  --color-nation-negative: var(--n-negative);
+  --color-nation-accent: var(--n-accent);
+}
+
+/* Visão geral da nação: cores do desenho (tema escuro) e equivalentes claros. */
+.nation-page {
+  --n-bg: #03111a;
+  --n-panel: #071c2a;
+  --n-raised: #102a39;
+  --n-chip: #0d2939;
+  --n-divider: #1b3645;
+  --n-text: #fefbee;
+  --n-muted: #bec7c3;
+  --n-subtle: #aeb9bc;
+  --n-icon: #102d3d;
+  --n-sea: #15364a;
+  --n-line: #2d5268;
+  --n-track: #173546;
+  --n-positive: #44ea6d;
+  --n-negative: #ea444b;
+  --n-accent: #ea444b;
+  --n-bar-soft: #b46b70;
+  --n-grid: #46606f;
+  --n-compass: #0b2637;
+  --n-quad-a: #152c3b;
+  --n-quad-b: #0d2d3b;
+  --n-quad-c: #182b38;
+  --n-quad-active: #071c2a;
+}
+
+:root[data-theme='light'] .nation-page {
+  --n-bg: var(--bg);
+  --n-panel: var(--panel);
+  --n-raised: var(--panel-raised);
+  --n-chip: var(--panel-raised);
+  --n-divider: var(--line);
+  --n-text: var(--fg);
+  --n-muted: var(--muted);
+  --n-subtle: var(--muted);
+  --n-icon: var(--panel-raised);
+  --n-sea: color-mix(in srgb, var(--navy) 12%, var(--cream));
+  --n-line: color-mix(in srgb, var(--navy) 28%, transparent);
+  --n-track: var(--panel-raised);
+  --n-positive: var(--positive);
+  --n-negative: #b3242b;
+  --n-accent: var(--primary-text);
+  --n-bar-soft: color-mix(in srgb, #b3242b 55%, var(--cream));
+  --n-grid: color-mix(in srgb, var(--navy) 40%, transparent);
+  --n-compass: var(--panel-raised);
+  --n-quad-a: color-mix(in srgb, var(--navy) 8%, var(--cream));
+  --n-quad-b: color-mix(in srgb, #1f7a8c 12%, var(--cream));
+  --n-quad-c: color-mix(in srgb, var(--navy) 12%, var(--cream));
+  --n-quad-active: var(--cream);
+}
+
+.nation-tag {
+  color: var(--tag-color);
+  background: color-mix(in srgb, var(--tag-color) 25%, var(--n-chip));
+}
+
+:root[data-theme='light'] .nation-tag {
+  color: color-mix(in srgb, var(--tag-color) 30%, var(--n-text));
 }
 
 html {

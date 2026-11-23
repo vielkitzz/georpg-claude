@@ -13,8 +13,16 @@ export function WorldMapPage() {
   return (
     <div className="mx-auto max-w-[110rem]">
       <PageTitle note="Clique em um território para ver suas províncias. Arraste para mover e use a roda do mouse para ampliar.">
-        Mapa mundial
+        Mapa Mundial
       </PageTitle>
+      {claims.status === 'loading' && (
+        <p role="status" className="mb-4 text-sm text-muted">
+          Carregando a ocupação dos territórios…
+        </p>
+      )}
+      {claims.status === 'ready' && claims.data.length === 0 && (
+        <p className="mb-4 text-sm text-muted">O mapa ainda não tem territórios reivindicados.</p>
+      )}
       {claims.status === 'error' && (
         <p role="alert" className="mb-4 text-warning">
           Não foi possível carregar os donos dos territórios. O mapa mostra só a geografia.
@@ -24,7 +32,7 @@ export function WorldMapPage() {
         <div className="lg:sticky lg:top-20">
           <WorldMap claims={data} selectedId={selectedId} onSelect={setSelectedId} />
         </div>
-        <aside className="flex min-h-0 flex-col gap-3 rounded-lg border border-line bg-panel p-4 lg:max-h-[calc(100dvh-12rem)]">
+        <aside className="flex min-h-0 flex-col gap-3 rounded-lg bg-panel p-4 lg:max-h-[calc(100dvh-12rem)]">
           <h2 className="title-semi text-xl">Territórios</h2>
           <TerritoryList
             territories={geography.states}

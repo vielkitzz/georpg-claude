@@ -31,7 +31,7 @@ export function RequireNation({ mode }: { mode: 'game' | 'founding' }) {
     let active = true
     void (async () => {
       try {
-        const { data, error } = await client.from('nations').select('id').eq('owner_id', userId).limit(1)
+        const { data, error } = await client.from('nations').select('id').eq('owner_id', userId).eq('status', 'active').limit(1)
         if (active) setResult({ userId, status: error ? 'error' : data?.length ? 'exists' : 'missing' })
       } catch {
         if (active) setResult({ userId, status: 'error' })
@@ -46,6 +46,6 @@ export function RequireNation({ mode }: { mode: 'game' | 'founding' }) {
     <button type="button" className={primaryButton} onClick={() => { setResult(null); setAttempt(n => n + 1) }}>Tentar novamente</button>
   }><p role="alert">O acesso permanece bloqueado até a verificação funcionar.</p></CenteredScreen>
   if (mode === 'game' && status === 'missing') return <Navigate to="/criar-pais" replace />
-  if (mode === 'founding' && status === 'exists') return <Navigate to="/" replace />
+  if (mode === 'founding' && status === 'exists') return <Navigate to="/nacao" replace />
   return <Outlet />
 }

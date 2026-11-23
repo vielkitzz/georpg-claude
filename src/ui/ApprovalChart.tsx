@@ -20,7 +20,7 @@ export function ApprovalChart({ values }: { values: number[] }) {
   }, [])
 
   const min = Math.floor(Math.min(...values) / 10) * 10
-  const max = Math.ceil(Math.max(...values) / 10) * 10
+  const max = Math.max(min + 10, Math.ceil(Math.max(...values) / 10) * 10)
   const innerW = width - PAD.left - PAD.right
   const innerH = HEIGHT - PAD.top - PAD.bottom
   const x = (i: number) => PAD.left + (i / Math.max(values.length - 1, 1)) * innerW

@@ -17,7 +17,7 @@ export function TerritoryDetails({
   claim?: TerritoryClaim
 }) {
   return (
-    <div className="rounded-md border border-line bg-raised p-3 text-sm">
+    <div className="rounded-md bg-raised p-3 text-sm">
       <p className="subtitle text-base">Território nº {territory.id}</p>
       <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
         <dt className="text-muted">Nome</dt>

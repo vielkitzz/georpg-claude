@@ -33,3 +33,4 @@ export interface WorldGeography {
 
 /** Geografia pura (sem dono, nome ou cor): gerada por `npm run build-map`. */
 export const geography = raw as unknown as WorldGeography
+export const getWorldMap = () => geography

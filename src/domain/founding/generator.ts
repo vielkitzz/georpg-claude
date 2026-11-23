@@ -1,6 +1,13 @@
-import type { ArchetypeId } from '../ideology/archetypes'
-import { between, createRng, pick, type Rng } from './rng'
-import type { GovernmentForm, GovernmentSystem, Regime, StateForm } from './options'
+import type { ArchetypeId } from '../ideology/archetypes.ts'
+import { between, createRng, pick, type Rng } from './rng.ts'
+import { calculateApproval } from './approval.ts'
+import type {
+  GovernmentForm,
+  GovernmentSystem,
+  LocalSelection,
+  Regime,
+  StateForm,
+} from './options.ts'
 
 /** Condições iniciais fixas da fundação. O ano vem do estado do mundo no servidor. */
 export const INITIAL_POPULATION = 1_000_000
@@ -51,6 +58,8 @@ export interface GeneratorInput {
   ideology: ArchetypeId
   /** Legitimidade inicial já calculada (0 a 100). */
   legitimacy: number
+  legitimacyPenalty?: number
+  localSelection?: LocalSelection
 }
 
 const OFFICES = [
@@ -248,7 +257,13 @@ export function generateInitialConditions(input: GeneratorInput): InitialConditi
   const rng = createRng(input.seed)
   const gdpPerCapita = 240 + between(rng, 0, 120)
   const gdp = INITIAL_POPULATION * gdpPerCapita
-  const approval = clamp(Math.round(50 + (input.legitimacy - 55) / 5) + between(rng, -3, 6), 30, 80)
+  const approval = calculateApproval(
+    input.legitimacy,
+    input.legitimacyPenalty ?? 0,
+    input.localSelection ?? 'misto',
+  )
+  // Mantém a sequência usada pelos indicadores determinísticos já publicados.
+  rng()
   return {
     population: INITIAL_POPULATION,
     gdp,

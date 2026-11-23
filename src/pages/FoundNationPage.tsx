@@ -1,152 +1,620 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { getSupabase } from '@/auth/supabase'
-import { TerritoryPicker } from './TerritoryPicker'
-import { Link } from 'react-router'
-import { composeOfficialCountryName, validateShortName, type Article } from '@/domain/founding/name'
+import { useQueryClient } from '@tanstack/react-query'
+import { myNationProfileQuery } from '@/data/get-my-nation-profile'
+import { useAuth } from '@/auth/AuthContext'
+import { checkFounding, confirmFounding, drawQuiz, previewFounding } from '@/data/foundingApi'
 import {
-  GOVERNMENT_FORMS, REGIMES, STATE_FORMS, LABELS, validSystems,
-  validLeadershipBases, firstLevelDivisions, SECOND_LEVEL_DIVISIONS,
-  LOCAL_SELECTIONS, type GovernmentForm, type Regime, type StateForm,
-  type GovernmentSystem, type LeadershipBasis, type LocalSelection,
+  validateEconomy,
+  validateFoundingText,
+  validateSymbols,
+  type FoundingDraft,
+  type FoundingPreview,
+} from '@/domain/founding/draft'
+import { ARTICLES, composeOfficialCountryName, validateShortName } from '@/domain/founding/name'
+import {
+  GOVERNMENT_FORMS,
+  GOVERNMENT_SYSTEMS,
+  LABELS,
+  LOCAL_SELECTIONS,
+  REGIMES,
+  SECOND_LEVEL_DIVISIONS,
+  STATE_FORMS,
+  firstLevelDivisions,
+  requiresHeadOfGovernment,
+  suggestedLocalSelection,
+  validLeadershipBases,
+  validSystems,
+  validateInstitutions,
+  type InstitutionsInput,
 } from '@/domain/founding/options'
+import { missingQuestions, scoreQuiz, topThree } from '@/domain/ideology'
+import { primaryButton, secondaryButton } from '@/ui/CenteredScreen'
+import { DiplomaticCard } from '@/ui/founding/DiplomaticCard'
+import { Choice, SymbolFields, TextField } from '@/ui/founding/Fields'
+import { Revelation } from '@/ui/founding/Revelation'
 import { Quiz } from '@/ui/ideology/Quiz'
-import { scoreQuiz, topThree, missingQuestions, type Answer, type Answers } from '@/domain/ideology'
+import { Report } from '@/ui/ideology/Report'
+import { TerritoryPicker } from './TerritoryPicker'
 
 const STEPS = [
-  'Nome da nação', 'Território', 'Forma de governo', 'Regime político',
-  'Sistema de governo', 'Organização territorial', 'Governo local',
-  'Chefia de Estado', 'Chefia de Governo', 'Identidade nacional',
-  'Questionário ideológico', 'Revisão',
+  ['Território', 'Escolha a região onde sua nação será fundada.'],
+  ['Nome curto e artigo', 'Defina o nome pelo qual a nação será conhecida.'],
+  ['Capital e moeda', 'Escolha a sede do governo e a moeda nacional.'],
+  ['Forma de governo', 'Escolha como se organiza a chefia de Estado.'],
+  ['Regime político', 'Determine como o poder é exercido no país.'],
+  ['Sistema de governo', 'Defina como os poderes se relacionam.'],
+  ['Forma de Estado', 'Determine como o poder é distribuído pelo território.'],
+  ['Divisão administrativa', 'Organize as divisões territoriais e a escolha de seus governantes.'],
+  ['Liderança', 'Defina os cargos e nomes das primeiras lideranças da sua nação.'],
+  ['Questionário ideológico', 'Responda às 36 afirmações e escolha a ideologia governante.'],
+  ['Identidade simbólica', 'Escolha os símbolos e conte a história da sua nação.'],
+  ['Revelação final', 'Confira os dados iniciais da sua nação antes de confirmar.'],
 ] as const
 
-const fieldClass = 'w-full rounded-md border border-line bg-bg px-3 py-2 text-foreground'
-const buttonClass = 'rounded-md bg-primary px-5 py-2 font-semibold text-white disabled:opacity-40'
+const initialDraft: FoundingDraft = {
+  territoryId: null,
+  shortName: '',
+  article: 'de',
+  capital: '',
+  currencyCode: '',
+  currencyName: '',
+  institutions: {
+    governmentForm: 'republica',
+    regime: 'democratico',
+    system: 'presidencialismo',
+    stateForm: 'unitario',
+    firstLevel: 'Províncias',
+    secondLevel: 'Municípios',
+    localSelection: 'nomeados',
+    leadershipBasis: 'eleito_direto',
+    headOfState: { title: '', name: '' },
+  },
+  answers: {},
+  ideology: null,
+  symbols: {
+    flag: '',
+    coatOfArms: '',
+    color: '',
+    anthem: '',
+    emblem: '',
+    motto: '',
+    description: '',
+    history: '',
+  },
+}
 
-function Choice<T extends string>({ label, value, values, names, onChange }: {
-  label: string; value: T; values: readonly T[]; names?: Record<T, string>; onChange: (v: T) => void
-}) {
-  return <label className="block space-y-2 text-sm"><span>{label}</span>
-    <select className={fieldClass} value={value} onChange={e => onChange(e.target.value as T)}>
-      {values.map(v => <option key={v} value={v}>{names?.[v] ?? v}</option>)}
-    </select>
-  </label>
+const buttonDisabled =
+  'disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0'
+const lastStep = STEPS.length - 1
+const quizStep = 9
+
+function normalizeCurrencyCode(value: string) {
+  const code = value.trim()
+  return /^[A-Za-z]{2,4}$/.test(code) ? code.toUpperCase() : code
 }
 
 export function FoundNationPage() {
   const navigate = useNavigate()
+  const queries = useQueryClient()
+  const { role } = useAuth()
+  const [draft, setDraft] = useState(initialDraft)
   const [step, setStep] = useState(0)
-  const [saving, setSaving] = useState(false)
-  const [saveError, setSaveError] = useState<string | null>(null)
-  const [shortName, setShortName] = useState('')
-  const [article, setArticle] = useState<Article>('de')
-  const [territoryId, setTerritoryId] = useState<number | null>(null)
+  const [reached, setReached] = useState(0)
   const [territoryAvailable, setTerritoryAvailable] = useState(false)
-  const [governmentForm, setGovernmentForm] = useState<GovernmentForm>('republica')
-  const [regime, setRegime] = useState<Regime>('democratico')
-  const [system, setSystem] = useState<GovernmentSystem>('presidencialismo')
-  const [stateForm, setStateForm] = useState<StateForm>('unitario')
-  const [firstLevel, setFirstLevel] = useState('Províncias')
-  const [secondLevel, setSecondLevel] = useState('Municípios')
-  const [localSelection, setLocalSelection] = useState<LocalSelection>('nomeados')
-  const [leadershipBasis, setLeadershipBasis] = useState<LeadershipBasis>('eleito_direto')
-  const [headOfState, setHeadOfState] = useState('')
-  const [headOfGovernment, setHeadOfGovernment] = useState('')
-  const [capital, setCapital] = useState('')
-  const [motto, setMotto] = useState('')
-  const [answers, setAnswers] = useState<Answers>({})
   const [quizFinished, setQuizFinished] = useState(false)
-  const [ideology, setIdeology] = useState('')
-  const officialName = composeOfficialCountryName({ governmentForm, stateForm, article, shortName })
-  const systems = validSystems(governmentForm, regime)
-  const bases = validLeadershipBases(governmentForm, regime)
-  const needsGovernmentHead = system === 'parlamentarismo' || system === 'semipresidencialismo'
-  const valid = [
-    !validateShortName(shortName), territoryAvailable && territoryId !== null, true, true, true, true, true,
-    headOfState.trim().length >= 2, !needsGovernmentHead || headOfGovernment.trim().length >= 2,
-    capital.trim().length >= 2, quizFinished && !!ideology, false,
-  ][step]
-  const scores = quizFinished ? scoreQuiz(answers) : null
-  const submit = async () => {
-    if (saving || !territoryAvailable || territoryId === null || !quizFinished || !ideology) return
-    const client = getSupabase()
-    if (!client) { setSaveError('Supabase não configurado.'); return }
-    setSaving(true)
-    setSaveError(null)
-    try {
-      const institutions = {
-        governmentForm, regime, system, stateForm, firstLevel, secondLevel, localSelection,
-        leadershipBasis,
-        headOfState: { title: governmentForm === 'monarquia' ? 'Monarca' : 'Presidente', name: headOfState.trim() },
-        ...(needsGovernmentHead ? { headOfGovernment: { title: 'Primeiro-ministro', name: headOfGovernment.trim() } } : {}),
-      }
-      const { data, error } = await client.functions.invoke('found-nation', {
-        body: { shortName, article, territoryId, capital, motto, institutions, answers, ideology },
-      })
-      if (error || !data?.nationId) {
-        const context = error && 'context' in error ? error.context : null
-        const response = context instanceof Response ? await context.json().catch(() => null) : null
-        setSaveError(response?.error ?? data?.error ?? 'Falha ao criar nação. Tente novamente.')
+  const [governmentHead, setGovernmentHead] = useState({ title: '', name: '' })
+  const [customLocalSelection, setCustomLocalSelection] = useState(false)
+  const [preview, setPreview] = useState<FoundingPreview | null>(null)
+  const [error, setError] = useState<{ error: string; code?: string } | null>(null)
+  const [notice, setNotice] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [reading, setReading] = useState(0)
+  const heading = useRef<HTMLHeadingElement>(null)
+  const institutions = draft.institutions
+  const systems = validSystems(institutions.governmentForm, institutions.regime)
+  const bases = validLeadershipBases(institutions.governmentForm, institutions.regime)
+  const needsGovernmentHead = requiresHeadOfGovernment(institutions.system)
+  const payload = needsGovernmentHead
+    ? { ...draft, institutions: { ...institutions, headOfGovernment: governmentHead } }
+    : draft
+  const officialName = draft.shortName.trim()
+    ? composeOfficialCountryName({ ...draft, ...institutions })
+    : ''
+  const scores = quizFinished ? scoreQuiz(draft.answers) : null
+  const answeringQuiz = step === quizStep && !quizFinished
+  const unanswered = answeringQuiz ? missingQuestions(draft.answers).length : 0
+  const invalidText = (value: string) => !!error && !validateFoundingText(value, 2, 60)
+
+  const edit = <K extends keyof FoundingDraft>(field: K, value: FoundingDraft[K]) => {
+    setDraft((current) => ({ ...current, [field]: value }))
+    setError(null)
+    setPreview(null)
+  }
+  const changeInstitution = (change: Partial<InstitutionsInput>) =>
+    edit('institutions', { ...institutions, ...change })
+  const alignInstitutions = (change: Partial<InstitutionsInput>) => {
+    const next = { ...institutions, ...change }
+    const allowed = validSystems(next.governmentForm, next.regime)
+    const validBases = validLeadershipBases(next.governmentForm, next.regime)
+    const notices = []
+    if (!allowed.includes(next.system)) {
+      next.system = allowed[0]
+      notices.push(`Sistema ajustado para ${LABELS.system[next.system]}.`)
+    }
+    if (!validBases.includes(next.leadershipBasis)) {
+      next.leadershipBasis = validBases[0]
+      notices.push(
+        `Base da chefia de Estado ajustada para ${LABELS.leadershipBasis[next.leadershipBasis]}.`,
+      )
+    }
+    setNotice(notices.join(' '))
+    edit('institutions', next)
+  }
+  const goTo = (destination: number) => {
+    setError(null)
+    setNotice('')
+    setStep(destination)
+    setReached((current) => Math.max(current, destination))
+    requestAnimationFrame(() => heading.current?.focus())
+  }
+
+  const refreshPreview = async () => {
+    setBusy(true)
+    setPreview(null)
+    setError(null)
+    const result = await previewFounding(payload)
+    if ('error' in result && result.code === 'owned') navigate('/nacao', { replace: true })
+    else if ('error' in result) setError(result)
+    else setPreview(result.preview)
+    setBusy(false)
+  }
+
+  const next = async () => {
+    if (answeringQuiz) {
+      if (unanswered > 0) {
+        setError({
+          error:
+            unanswered === 1
+              ? 'Falta responder uma pergunta do questionário.'
+              : `Faltam ${unanswered} perguntas do questionário.`,
+        })
         return
       }
-      navigate('/', { replace: true })
-    } catch {
-      setSaveError('Não foi possível conectar ao servidor.')
-    } finally {
-      setSaving(false)
+      setQuizFinished(true)
+      setError(null)
+      requestAnimationFrame(() => heading.current?.focus())
+      return
+    }
+    const currencyCode = normalizeCurrencyCode(draft.currencyCode)
+    const validation = [
+      territoryAvailable && draft.territoryId !== null
+        ? null
+        : 'Selecione um território livre para continuar.',
+      validateShortName(draft.shortName),
+      validateEconomy({ ...draft, currencyCode }),
+      null,
+      null,
+      null,
+      null,
+      null,
+      validateInstitutions(payload.institutions)[0],
+      scores && !topThree(scores).some((match) => match.archetype.id === draft.ideology)
+        ? 'Escolha uma das três ideologias mais próximas.'
+        : null,
+      validateSymbols(draft.symbols),
+    ][step]
+    if (validation) {
+      setError({ error: validation })
+      return
+    }
+    if (step === 1) {
+      setBusy(true)
+      const result = await checkFounding(payload)
+      setBusy(false)
+      if ('error' in result) {
+        if (result.code === 'owned') {
+          navigate('/nacao', { replace: true })
+          return
+        }
+        setError(result)
+        return
+      }
+    }
+    if (step === 2) edit('currencyCode', currencyCode)
+    goTo(step + 1)
+    if (step === 10) await refreshPreview()
+  }
+
+  const confirm = async () => {
+    if (!preview) return
+    setBusy(true)
+    setError(null)
+    const result = await confirmFounding(payload, preview.token)
+    if ('error' in result && result.code !== 'owned') {
+      setError(result)
+      if (result.code === 'preview' || result.code === 'name' || result.code === 'territory')
+        setPreview(null)
+    } else {
+      await queries.invalidateQueries({ queryKey: myNationProfileQuery.queryKey })
+      navigate('/nacao', { replace: true })
+    }
+    setBusy(false)
+  }
+
+  const randomFill = async () => {
+    setBusy(true)
+    setError(null)
+    const result = await drawQuiz()
+    if ('error' in result) setError(result)
+    else edit('answers', result.answers)
+    setBusy(false)
+  }
+
+  const renderStep = () => {
+    switch (step) {
+      case 0:
+        return (
+          <TerritoryPicker
+            selectedId={draft.territoryId}
+            onSelect={(id) => edit('territoryId', id)}
+            onAvailability={setTerritoryAvailable}
+          />
+        )
+      case 1:
+        return (
+          <>
+            <TextField
+              label="Nome curto"
+              max={40}
+              value={draft.shortName}
+              onChange={(value) => edit('shortName', value)}
+              invalid={!!error && (!!validateShortName(draft.shortName) || error.code === 'name')}
+            />
+            <Choice
+              label="Artigo"
+              value={draft.article}
+              values={ARTICLES}
+              onChange={(value) => edit('article', value)}
+            />
+            {officialName && (
+              <p className="text-sm text-muted">
+                Nome oficial provisório <strong className="text-fg">{officialName}</strong>
+              </p>
+            )}
+          </>
+        )
+      case 2:
+        return (
+          <>
+            <TextField
+              label="Capital"
+              invalid={invalidText(draft.capital)}
+              max={60}
+              value={draft.capital}
+              onChange={(value) => edit('capital', value)}
+            />
+            <TextField
+              label="Código monetário"
+              invalid={!!error && !/^[A-Z]{2,4}$/.test(normalizeCurrencyCode(draft.currencyCode))}
+              placeholder="Ex.: BRL"
+              value={draft.currencyCode}
+              onChange={(value) => edit('currencyCode', value)}
+            />
+            <TextField
+              label="Nome da moeda"
+              invalid={invalidText(draft.currencyName)}
+              max={60}
+              value={draft.currencyName}
+              onChange={(value) => edit('currencyName', value)}
+            />
+          </>
+        )
+      case 3:
+        return (
+          <Choice
+            label="Forma de governo"
+            value={institutions.governmentForm}
+            values={GOVERNMENT_FORMS}
+            names={LABELS.governmentForm}
+            onChange={(governmentForm) => alignInstitutions({ governmentForm })}
+          />
+        )
+      case 4:
+        return (
+          <Choice
+            label="Regime político"
+            value={institutions.regime}
+            values={REGIMES}
+            names={LABELS.regime}
+            onChange={(regime) => alignInstitutions({ regime })}
+          />
+        )
+      case 5:
+        return (
+          <Choice
+            label="Sistema de governo"
+            value={institutions.system}
+            values={GOVERNMENT_SYSTEMS}
+            available={systems}
+            names={LABELS.system}
+            onChange={(system) => changeInstitution({ system })}
+          />
+        )
+      case 6:
+        return (
+          <Choice
+            label="Forma de Estado"
+            value={institutions.stateForm}
+            values={STATE_FORMS}
+            names={LABELS.stateForm}
+            onChange={(stateForm) => {
+              const divisions = firstLevelDivisions(stateForm)
+              changeInstitution({
+                stateForm,
+                firstLevel: divisions.includes(institutions.firstLevel)
+                  ? institutions.firstLevel
+                  : divisions[0],
+                localSelection: customLocalSelection
+                  ? institutions.localSelection
+                  : suggestedLocalSelection(stateForm),
+              })
+            }}
+          />
+        )
+      case 7:
+        return (
+          <>
+            <Choice
+              label="Primeiro nível"
+              value={institutions.firstLevel}
+              values={firstLevelDivisions(institutions.stateForm)}
+              onChange={(firstLevel) => changeInstitution({ firstLevel })}
+            />
+            <Choice
+              label="Segundo nível"
+              value={institutions.secondLevel}
+              values={SECOND_LEVEL_DIVISIONS}
+              onChange={(secondLevel) => changeInstitution({ secondLevel })}
+            />
+            <Choice
+              label="Governantes locais"
+              value={institutions.localSelection}
+              values={LOCAL_SELECTIONS}
+              names={{ eleitos: 'Eleitos (+5)', nomeados: 'Nomeados (−5)', misto: 'Misto (0)' }}
+              onChange={(localSelection) => {
+                setCustomLocalSelection(true)
+                changeInstitution({ localSelection })
+              }}
+            />
+            <p className="text-sm text-muted">
+              Os valores entre parênteses indicam o efeito na legitimidade inicial.
+            </p>
+          </>
+        )
+      case 8:
+        return (
+          <>
+            <TextField
+              label="Título do chefe de Estado"
+              invalid={invalidText(institutions.headOfState.title)}
+              max={60}
+              value={institutions.headOfState.title}
+              onChange={(title) =>
+                changeInstitution({ headOfState: { ...institutions.headOfState, title } })
+              }
+            />
+            <TextField
+              label="Nome do chefe de Estado"
+              invalid={invalidText(institutions.headOfState.name)}
+              max={60}
+              value={institutions.headOfState.name}
+              onChange={(name) =>
+                changeInstitution({ headOfState: { ...institutions.headOfState, name } })
+              }
+            />
+            <Choice
+              label="Base da chefia de Estado"
+              value={institutions.leadershipBasis}
+              values={bases}
+              names={LABELS.leadershipBasis}
+              onChange={(leadershipBasis) => changeInstitution({ leadershipBasis })}
+            />
+            {needsGovernmentHead && (
+              <>
+                <TextField
+                  label="Título do chefe de Governo"
+                  invalid={invalidText(governmentHead.title)}
+                  max={60}
+                  value={governmentHead.title}
+                  onChange={(title) => {
+                    setError(null)
+                    setGovernmentHead({ ...governmentHead, title })
+                  }}
+                />
+                <TextField
+                  label="Nome do chefe de Governo"
+                  invalid={invalidText(governmentHead.name)}
+                  max={60}
+                  value={governmentHead.name}
+                  onChange={(name) => {
+                    setError(null)
+                    setGovernmentHead({ ...governmentHead, name })
+                  }}
+                />
+              </>
+            )}
+          </>
+        )
+      case quizStep:
+        return scores ? (
+          <>
+            <Report
+              scores={scores}
+              institutions={institutions}
+              selectedIdeology={draft.ideology}
+              onSelectIdeology={(ideology) => edit('ideology', ideology)}
+            />
+            <button
+              type="button"
+              className={secondaryButton}
+              onClick={() => {
+                setQuizFinished(false)
+                edit('ideology', null)
+              }}
+            >
+              Revisar respostas
+            </button>
+          </>
+        ) : (
+          <Quiz
+            answers={draft.answers}
+            onAnswer={(id, answer) => {
+              setDraft((current) => ({
+                ...current,
+                answers: { ...current.answers, [id]: answer },
+              }))
+              setError(null)
+              setPreview(null)
+            }}
+            onRandomFill={role === 'ADMIN' ? randomFill : undefined}
+            busy={busy}
+          />
+        )
+      case 10:
+        return (
+          <SymbolFields
+            value={draft.symbols}
+            onChange={(field, value) =>
+              setDraft((current) => ({
+                ...current,
+                symbols: { ...current.symbols, [field]: value },
+              }))
+            }
+            onReading={(active) => setReading((current) => current + (active ? 1 : -1))}
+            invalid={!!error}
+          />
+        )
+      case 11:
+        return preview ? (
+          <Revelation preview={preview} draft={draft} />
+        ) : busy ? (
+          <p role="status">Gerando prévia da fundação…</p>
+        ) : null
     }
   }
 
-  return <main className="mx-auto min-h-dvh max-w-3xl space-y-6 px-4 py-10 text-foreground">
-    <div className="flex items-center justify-between gap-4">
-      <div><p className="text-sm text-muted">GEO-RPG · Fundação de nação</p>
-        <h1 className="text-3xl font-bold uppercase">Fundação de nação</h1><h2 className="text-xl font-semibold">{STEPS[step]}</h2></div>
-      <Link to="/login" className="text-sm underline">Voltar ao login</Link>
-    </div>
-    <div className="h-2 overflow-hidden rounded-full bg-line">
-      <div className="h-full bg-primary transition-all" style={{ width: `${(step + 1) / STEPS.length * 100}%` }} />
-    </div>
-    <p className="text-sm text-muted">Etapa {step + 1} de {STEPS.length}. Suas respostas ainda não são salvas.</p>
-    <section className="space-y-4 rounded-xl border border-line bg-surface p-5">
-      {step === 0 && <>
-        <label className="block space-y-2">Nome curto<input className={fieldClass} value={shortName} maxLength={40} onChange={e => setShortName(e.target.value)} placeholder="Ex.: Valdris" /></label>
-        <Choice label="Artigo" value={article} values={['de','da','do'] as const} onChange={setArticle} />
-        <p className="text-sm text-muted">Nome oficial: {officialName}</p>
-        {shortName && validateShortName(shortName) && <p role="alert" className="text-sm text-red-400">{validateShortName(shortName)}</p>}
-      </>}
-      {step === 1 && <TerritoryPicker selectedId={territoryId} onSelect={setTerritoryId} onAvailability={setTerritoryAvailable} />}
-      {step === 2 && <Choice label="Forma de governo" value={governmentForm} values={GOVERNMENT_FORMS} names={LABELS.governmentForm} onChange={v => { setGovernmentForm(v); const allowed = validSystems(v, regime); if (!allowed.includes(system)) setSystem(allowed[0]); const b = validLeadershipBases(v, regime); if (!b.includes(leadershipBasis)) setLeadershipBasis(b[0]) }} />}
-      {step === 3 && <Choice label="Regime" value={regime} values={REGIMES} names={LABELS.regime} onChange={v => { setRegime(v); const allowed = validSystems(governmentForm, v); if (!allowed.includes(system)) setSystem(allowed[0]); const b = validLeadershipBases(governmentForm, v); if (!b.includes(leadershipBasis)) setLeadershipBasis(b[0]) }} />}
-      {step === 4 && <Choice label="Sistema" value={system} values={systems} names={LABELS.system} onChange={setSystem} />}
-      {step === 5 && <div className="space-y-4">
-        <Choice label="Forma de Estado" value={stateForm} values={STATE_FORMS} names={LABELS.stateForm} onChange={v => { setStateForm(v); setFirstLevel(firstLevelDivisions(v)[0]) }} />
-        <Choice label="Divisões principais" value={firstLevel} values={firstLevelDivisions(stateForm)} onChange={setFirstLevel} />
-        <Choice label="Divisões secundárias" value={secondLevel} values={SECOND_LEVEL_DIVISIONS} onChange={setSecondLevel} />
-      </div>}
-      {step === 6 && <Choice label="Seleção dos governantes locais" value={localSelection} values={LOCAL_SELECTIONS} names={LABELS.localSelection} onChange={setLocalSelection} />}
-      {step === 7 && <div className="space-y-4">
-        <Choice label="Base da chefia de Estado" value={leadershipBasis} values={bases} names={LABELS.leadershipBasis} onChange={setLeadershipBasis} />
-        <label className="block space-y-2">Nome do chefe de Estado<input className={fieldClass} value={headOfState} onChange={e => setHeadOfState(e.target.value)} /></label>
-      </div>}
-      {step === 8 && (needsGovernmentHead ? <label className="block space-y-2">Nome do chefe de Governo<input className={fieldClass} value={headOfGovernment} onChange={e => setHeadOfGovernment(e.target.value)} /></label> : <p>Seu sistema não exige um chefe de Governo separado.</p>)}
-      {step === 9 && <div className="space-y-4">
-        <label className="block space-y-2">Capital<input className={fieldClass} value={capital} onChange={e => setCapital(e.target.value)} /></label>
-        <label className="block space-y-2">Lema (opcional)<input className={fieldClass} value={motto} onChange={e => setMotto(e.target.value)} /></label>
-      </div>}
-      {step === 10 && (!quizFinished ? <Quiz answers={answers} onAnswer={(id: string, answer: Answer) => setAnswers(current => ({ ...current, [id]: answer }))} onFinish={() => { if (!missingQuestions(answers).length) setQuizFinished(true) }} /> :
-        <div className="space-y-3"><p>Escolha a ideologia governante:</p>{topThree(scores!).map(x => <label key={x.archetype.id} className="flex gap-2"><input type="radio" name="ideology" checked={ideology === x.archetype.id} onChange={() => setIdeology(x.archetype.id)} />{x.archetype.name} ({x.affinity}% de afinidade)</label>)}</div>)}
-      {step === 11 && <div className="space-y-2">
-        <p><strong>País:</strong> {officialName}</p><p><strong>Capital:</strong> {capital}</p>
-        <p><strong>Governo:</strong> {LABELS.governmentForm[governmentForm]}, {LABELS.regime[regime]}</p>
-        <p><strong>Território:</strong> {territoryId ?? "não selecionado"}</p>
-        <p className="text-sm text-muted">Ao confirmar, a nação e a posse do território serão registradas no servidor.</p>
-        {saveError && <p role="alert" className="text-warning">{saveError}</p>}
-        <button type="button" className={buttonClass} disabled={saving || !territoryAvailable} onClick={submit}>{saving ? 'Fundando…' : 'Fundar minha nação'}</button>
-      </div>}
-    </section>
-    <div className="flex justify-between gap-4">
-      <button type="button" className={buttonClass} disabled={step === 0} onClick={() => setStep(s => s - 1)}>Anterior</button>
-      <button type="button" className={buttonClass} disabled={!valid || step === STEPS.length - 1} onClick={() => setStep(s => s + 1)}>Próximo</button>
-    </div>
-  </main>
+  return (
+    <main className="founding min-h-dvh bg-bg text-fg">
+      <div className="mx-auto max-w-[83rem] px-4 py-6 sm:px-8 sm:py-10">
+        <header className="mb-5 border-b border-line pb-5">
+          <p className="subtitle text-sm text-secondary">GEO-RPG</p>
+          <h1 className="title mt-1 text-5xl sm:text-7xl">Fundação de nação</h1>
+        </header>
+        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_21rem]">
+          <div className="min-w-0 max-lg:order-2">
+            <section className="founding-panel p-4 sm:p-7" aria-labelledby="fundacao-etapa">
+              <div className="mb-6">
+                <p className="subtitle text-sm text-secondary">
+                  Etapa {step + 1} de {STEPS.length}
+                </p>
+                <div
+                  className="my-3 grid grid-cols-12 gap-1"
+                  role="progressbar"
+                  aria-label="Progresso da fundação"
+                  aria-valuemin={1}
+                  aria-valuemax={STEPS.length}
+                  aria-valuenow={step + 1}
+                >
+                  {STEPS.map(([name], index) => (
+                    <span
+                      aria-hidden
+                      key={name}
+                      className={`h-1.5 rounded-full transition-colors ${index <= step ? 'bg-primary' : 'bg-line'}`}
+                    />
+                  ))}
+                </div>
+                <h2
+                  ref={heading}
+                  id="fundacao-etapa"
+                  tabIndex={-1}
+                  className="title-semi mt-5 text-4xl outline-none sm:text-5xl"
+                >
+                  {STEPS[step][0]}
+                </h2>
+                <p className="mt-2 text-sm text-muted">{STEPS[step][1]}</p>
+              </div>
+              <fieldset disabled={busy} className="min-w-0 space-y-4">
+                {renderStep()}
+              </fieldset>
+              {notice && (
+                <p role="status" className="mt-4 text-sm text-warning">
+                  {notice}
+                </p>
+              )}
+              {error && (
+                <p role="alert" className="founding-error mt-4 text-sm">
+                  {error.error}
+                </p>
+              )}
+              <nav
+                aria-label="Etapas da fundação"
+                className="mt-6 flex flex-wrap justify-between gap-3 border-t border-line pt-4"
+              >
+                <button
+                  type="button"
+                  className={`${secondaryButton} ${buttonDisabled}`}
+                  disabled={step === 0 || busy || reading > 0}
+                  onClick={() => goTo(step - 1)}
+                >
+                  Anterior
+                </button>
+                {step < lastStep ? (
+                  <button
+                    type="button"
+                    className={`${primaryButton} ${buttonDisabled}`}
+                    disabled={busy || reading > 0}
+                    onClick={next}
+                  >
+                    {busy
+                      ? 'Aguarde…'
+                      : answeringQuiz && unanswered === 0
+                        ? 'Ver resultado'
+                        : 'Próxima'}
+                  </button>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {error?.code === 'territory' && (
+                      <button type="button" className={secondaryButton} onClick={() => goTo(0)}>
+                        Escolher território
+                      </button>
+                    )}
+                    {error?.code === 'name' && (
+                      <button type="button" className={secondaryButton} onClick={() => goTo(1)}>
+                        Revisar nome
+                      </button>
+                    )}
+                    {!preview && !busy && (
+                      <button type="button" className={secondaryButton} onClick={refreshPreview}>
+                        Atualizar prévia
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className={`${primaryButton} ${buttonDisabled}`}
+                      disabled={!preview || busy}
+                      onClick={confirm}
+                    >
+                      {busy && preview ? 'Confirmando…' : 'CONFIRMAR FUNDAÇÃO'}
+                    </button>
+                  </div>
+                )}
+              </nav>
+            </section>
+          </div>
+          <DiplomaticCard draft={payload} officialName={officialName} reached={reached} />
+        </div>
+      </div>
+    </main>
+  )
 }
