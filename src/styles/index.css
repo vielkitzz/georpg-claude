@@ -131,6 +131,15 @@
   --n-quad-active: var(--cream);
 }
 
+.nation-tag {
+  color: var(--tag-color);
+  background: color-mix(in srgb, var(--tag-color) 25%, var(--n-chip));
+}
+
+:root[data-theme='light'] .nation-tag {
+  color: color-mix(in srgb, var(--tag-color) 30%, var(--n-text));
+}
+
 html {
   background: var(--bg);
   color: var(--fg);

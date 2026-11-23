@@ -1,22 +1,42 @@
 import { Crown, Flag, Flame, Landmark, Shield, Users, type LucideIcon } from 'lucide-react'
+import type { CSSProperties } from 'react'
+import tagIcons from '@/assets/nation-tag-icons.svg?no-inline'
+import { LABELS } from '@/domain/founding/options'
+import type { ArchetypeId } from '@/domain/ideology/archetypes'
 import { formatFounded, splitOfficialName } from '@/domain/nationView'
 import type { Nation } from '@/domain/types'
 
-function Chip({
-  icon: Icon,
-  color,
-  children,
-}: {
-  icon: LucideIcon
-  color: string
-  children: string
-}) {
+type TagStyle = { icon: string | LucideIcon; color: string }
+
+const theocracyTag = { icon: 'teocracia', color: '#E6D28A' }
+const formTags = new Map<string, TagStyle>([
+  [LABELS.governmentForm.republica, { icon: 'republica', color: '#1FB5A8' }],
+  [LABELS.governmentForm.monarquia, { icon: 'monarquia', color: '#BF4AFF' }],
+  [LABELS.governmentForm.teocracia, theocracyTag],
+])
+const ideologyTags: Partial<Record<ArchetypeId, TagStyle>> = {
+  liberal_classico: { icon: 'liberal-classico', color: '#F5A524' },
+  conservador: { icon: 'conservador', color: '#368BFF' },
+  social_democrata: { icon: 'social-democrata', color: '#FF4268' },
+  socialista_revolucionario: { icon: 'socialista', color: '#E54C35' },
+  nacionalista_autoritario: { icon: 'nacionalista-autoritario', color: '#A6A6B8' },
+  teocrata: theocracyTag,
+}
+const defaultIdeologyTag = { icon: Flame, color: '#F5A524' }
+
+function Chip({ icon: Icon, color, children }: TagStyle & { children: string }) {
   return (
     <span
-      className="inline-flex h-7 items-center gap-2 rounded-[4px] px-2.5 text-xs"
-      style={{ color, background: `color-mix(in srgb, ${color} 25%, var(--n-chip))` }}
+      className="nation-tag inline-flex min-h-7 items-center gap-2 rounded-[4px] px-2.5 text-xs"
+      style={{ '--tag-color': color } as CSSProperties}
     >
-      <Icon size={14} aria-hidden />
+      {typeof Icon === 'string' ? (
+        <svg aria-hidden className="size-3.5 shrink-0 fill-current">
+          <use href={`${tagIcons}#${Icon}`} width="14" height="14" />
+        </svg>
+      ) : (
+        <Icon size={14} aria-hidden className="shrink-0" />
+      )}
       {children}
     </span>
   )
@@ -61,6 +81,9 @@ function Symbol({
 export function NationHero({ nation, ideologyName }: { nation: Nation; ideologyName?: string }) {
   const { prefix, core } = splitOfficialName(nation.officialName, nation.shortName)
   const color = nation.nationalColor
+  const form = nation.government.form
+  const formTag = formTags.get(form) ?? { icon: formIcon(form), color: '#BF4AFF' }
+  const ideologyTag = (nation.ideology && ideologyTags[nation.ideology]) || defaultIdeologyTag
   return (
     <section
       aria-label="Identidade da nação"
@@ -118,14 +141,8 @@ export function NationHero({ nation, ideologyName }: { nation: Nation; ideologyN
             </p>
           )}
           <div className="mt-auto flex flex-wrap gap-2 pt-6">
-            <Chip icon={formIcon(nation.government.form)} color="#BF4AFF">
-              {nation.government.form}
-            </Chip>
-            {ideologyName && (
-              <Chip icon={Flame} color="#F5A524">
-                {ideologyName}
-              </Chip>
-            )}
+            <Chip {...formTag}>{form}</Chip>
+            {ideologyName && <Chip {...ideologyTag}>{ideologyName}</Chip>}
             <Chip icon={Users} color="#A78BFA">
               {nation.government.system}
             </Chip>
