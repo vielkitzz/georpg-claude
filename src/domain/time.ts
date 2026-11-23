@@ -21,7 +21,7 @@ export const TICK_UTC_HOUR = TICK_SCHEDULE.brasiliaHour - TICK_SCHEDULE.brasilia
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 
-const MONTH_NAMES = [
+export const MONTH_NAMES = [
   'Janeiro',
   'Fevereiro',
   'Março',
