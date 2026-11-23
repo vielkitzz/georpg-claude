@@ -96,7 +96,7 @@ export function buildIndicators(input: IndicatorInputs): Indicator[] {
     },
     {
       key: 'hdi',
-      label: 'Índice de Desenvolvimento Humano (IDH)',
+      label: 'Índice de Desenv. Humano (IDH)',
       caption: 'Social · índice',
       value: formatDecimal(input.hdi, 3),
       delta: delta('hdi'),

@@ -30,7 +30,7 @@ type SymbolSize = { source: string; ratio: number }
 function Chip({ icon: Icon, color, children }: TagStyle & { children: string }) {
   return (
     <span
-      className="nation-tag inline-flex min-h-7 items-center gap-2 rounded-[4px] px-2.5 text-xs"
+      className="nation-tag inline-flex min-h-7 items-center gap-2 rounded-[4px] px-3 text-xs"
       style={{ '--tag-color': color } as CSSProperties}
     >
       {typeof Icon === 'string' ? (
@@ -65,7 +65,7 @@ function Symbol({
 }) {
   const [failedSource, setFailedSource] = useState<string>()
   return (
-    <figure className="m-0 flex min-w-0 flex-col items-center gap-3">
+    <figure className="m-0 flex min-w-0 flex-col items-center gap-2">
       <div className="relative w-full" style={{ aspectRatio: ratio }}>
         {src && src !== failedSource ? (
           <img
@@ -120,13 +120,13 @@ export function NationHero({ nation, ideologyName }: { nation: Nation; ideologyN
       />
       <div aria-hidden className="absolute inset-x-0 top-0 h-1" style={{ background: color }} />
 
-      <div className="relative flex flex-col gap-8 p-6 @min-[860px]:flex-row">
+      <div className="relative flex flex-col gap-10 p-8 @min-[860px]:flex-row">
         <div className="min-w-0 @min-[860px]:shrink-0">
           <p className="text-[10px] tracking-[0.18em] text-nation-subtle uppercase">
             Símbolos nacionais
           </p>
           <div
-            className="mt-5 grid max-w-[min(100%,305px)] items-start gap-5"
+            className="mt-4 grid max-w-[min(100%,305px)] items-start gap-6"
             style={{
               width: `calc(${SYMBOL_HEIGHT * (flagRatio + coatRatio)}px + 1.25rem)`,
               gridTemplateColumns: `minmax(0, ${flagRatio}fr) minmax(0, ${coatRatio}fr)`,
@@ -151,7 +151,7 @@ export function NationHero({ nation, ideologyName }: { nation: Nation; ideologyN
 
         <div
           aria-hidden
-          className="hidden h-44 w-px shrink-0 self-center bg-nation-line @min-[860px]:block"
+          className="hidden h-40 w-px shrink-0 self-center bg-nation-line @min-[860px]:block"
         />
 
         <div className="flex min-w-0 flex-1 flex-col">
@@ -160,17 +160,17 @@ export function NationHero({ nation, ideologyName }: { nation: Nation; ideologyN
           </p>
           <h2
             aria-label={nation.officialName}
-            className="mt-3 font-title text-[clamp(1.75rem,4cqw,2.75rem)] leading-none wrap-anywhere text-nation-text uppercase"
+            className="mt-3 font-title text-[clamp(3rem,4cqw,2.75rem)] leading-none wrap-anywhere text-nation-text uppercase"
           >
             {prefix && <span style={{ fontWeight: 400 }}>{prefix}</span>}
             <span style={{ fontWeight: 700 }}>{core}</span>
           </h2>
           {nation.motto && (
-            <p className="mt-2 font-script text-[28px] leading-9 text-nation-subtle">
+            <p className="mt-auto font-script text-[28px] leading-9 text-nation-subtle">
               “{nation.motto}”
             </p>
           )}
-          <div className="mt-auto flex flex-wrap gap-2 pt-6">
+          <div className="mt-5 flex flex-wrap gap-2">
             <Chip {...formTag}>{form}</Chip>
             {ideologyName && <Chip {...ideologyTag}>{ideologyName}</Chip>}
             <Chip icon={Users} color="#A78BFA">
