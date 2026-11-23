@@ -18,11 +18,13 @@ export function NationCard({
 }) {
   return (
     <section
-      className={`@container flex min-w-0 flex-col rounded-md bg-nation-panel p-6 ${className}`}
+      className={`@container flex min-w-0 flex-col gap-5 rounded-md bg-nation-panel p-6 ${className}`}
     >
       <div
-        className={`flex items-start justify-between gap-4 ${
-          divider ? 'mb-5 border-b border-nation-divider pb-3' : 'mb-5'
+        className={`relative flex items-start justify-between gap-4 ${
+          divider
+            ? 'after:absolute after:inset-x-0 after:-bottom-2.5 after:border-b after:border-nation-divider'
+            : ''
         }`}
       >
         <div className="min-w-0">

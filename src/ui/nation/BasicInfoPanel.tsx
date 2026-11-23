@@ -60,12 +60,12 @@ export function BasicInfoPanel({
 
   return (
     <NationCard title="Informações Básicas" divider>
-      <dl className="grid grid-cols-1 gap-x-6 gap-y-[11px] pt-1 @min-[520px]:grid-cols-2 @min-[760px]:grid-cols-3">
+      <dl className="grid grid-cols-1 gap-x-8 gap-y-3 @min-[520px]:grid-cols-2 @min-[760px]:grid-cols-3">
         <Column facts={first} />
         <Column facts={second} />
         <Column facts={third} />
       </dl>
-      <div className="mt-auto pt-6">
+      <div className="mt-auto">
         <p className="flex items-center gap-3 rounded-[4px] bg-nation-raised px-4 py-2 text-xs text-nation-muted">
           <Info size={16} aria-hidden className="shrink-0" />
           Mudar o regime, forma de governo e sistema exige um evento político.

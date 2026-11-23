@@ -1,5 +1,5 @@
 import { Crown, Flag, Flame, Landmark, Shield, Users, type LucideIcon } from 'lucide-react'
-import type { CSSProperties } from 'react'
+import { useState, type CSSProperties } from 'react'
 import tagIcons from '@/assets/nation-tag-icons.svg?no-inline'
 import { LABELS } from '@/domain/founding/options'
 import type { ArchetypeId } from '@/domain/ideology/archetypes'
@@ -51,26 +51,30 @@ function Symbol({
   src,
   label,
   fallback: Fallback,
-  className,
 }: {
   src?: string
   label: string
   fallback: LucideIcon
-  className: string
 }) {
+  const [failedSource, setFailedSource] = useState<string>()
   return (
-    <figure className="m-0 flex flex-col items-center gap-3">
-      <div className={`grid h-[116px] place-items-center ${className}`}>
-        {src ? (
-          <img src={src} alt={label} className="size-full object-contain" />
+    <figure className="m-0 flex min-w-0 flex-col items-center gap-3">
+      <div className="grid h-[116px] w-full place-items-center">
+        {src && src !== failedSource ? (
+          <img
+            src={src}
+            alt={label}
+            onError={() => setFailedSource(src)}
+            className="size-full object-contain"
+          />
         ) : (
           <span className="grid size-full place-items-center rounded-[2px] border border-dashed border-nation-line text-nation-subtle">
             <Fallback size={28} aria-hidden />
-            <span className="sr-only">{label} ainda não definida</span>
+            <span className="sr-only">{label} indisponível</span>
           </span>
         )}
       </div>
-      <figcaption className="text-[10px] tracking-[0.18em] text-nation-muted uppercase">
+      <figcaption className="text-center text-[10px] tracking-[0.18em] text-nation-muted uppercase">
         {label}
       </figcaption>
     </figure>
@@ -98,24 +102,14 @@ export function NationHero({ nation, ideologyName }: { nation: Nation; ideologyN
       />
       <div aria-hidden className="absolute inset-x-0 top-0 h-1" style={{ background: color }} />
 
-      <div className="relative flex flex-col gap-8 px-7 pt-8 pb-9 @min-[860px]:flex-row">
-        <div className="shrink-0">
+      <div className="relative flex flex-col gap-8 p-6 @min-[860px]:flex-row">
+        <div className="min-w-0 @min-[860px]:shrink-0">
           <p className="text-[10px] tracking-[0.18em] text-nation-subtle uppercase">
             Símbolos nacionais
           </p>
-          <div className="mt-6 flex items-start gap-5">
-            <Symbol
-              src={nation.symbols.flag}
-              label="Bandeira"
-              fallback={Flag}
-              className="w-[164px]"
-            />
-            <Symbol
-              src={nation.symbols.coatOfArms}
-              label="Brasão de armas"
-              fallback={Shield}
-              className="w-[121px]"
-            />
+          <div className="mt-5 grid w-full max-w-[305px] grid-cols-[164fr_121fr] items-start gap-5 @min-[860px]:w-[305px]">
+            <Symbol src={nation.symbols.flag} label="Bandeira" fallback={Flag} />
+            <Symbol src={nation.symbols.coatOfArms} label="Brasão de armas" fallback={Shield} />
           </div>
         </div>
 
@@ -130,7 +124,7 @@ export function NationHero({ nation, ideologyName }: { nation: Nation; ideologyN
           </p>
           <h2
             aria-label={nation.officialName}
-            className="mt-3 font-title text-[clamp(2.5rem,6cqw,4.25rem)] leading-none text-nation-text uppercase"
+            className="mt-3 font-title text-[clamp(1.75rem,4cqw,2.75rem)] leading-none wrap-anywhere text-nation-text uppercase"
           >
             {prefix && <span style={{ fontWeight: 400 }}>{prefix}</span>}
             <span style={{ fontWeight: 700 }}>{core}</span>

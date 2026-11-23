@@ -8,6 +8,8 @@ export interface Viewport {
 export interface MapSize {
   width: number
   height: number
+  /** Permite centralizar territórios junto às bordas do mapa nacional. */
+  centerAtEdges?: boolean
 }
 
 export const MIN_ZOOM = 1
@@ -16,14 +18,30 @@ export const INITIAL_VIEWPORT: Viewport = { k: 1, x: 0, y: 0 }
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value))
 
-/** Mantém o mapa cobrindo todo o quadro: sem bordas vazias ao arrastar. */
-export function clampViewport(viewport: Viewport, { width, height }: MapSize): Viewport {
+/** Limita o deslocamento do mapa ao quadro. */
+export function clampViewport(
+  viewport: Viewport,
+  { width, height, centerAtEdges }: MapSize,
+): Viewport {
   const k = clamp(viewport.k, MIN_ZOOM, MAX_ZOOM)
+  const extraX = centerAtEdges ? width / 2 : 0
+  const extraY = centerAtEdges ? height / 2 : 0
   return {
     k,
-    x: clamp(viewport.x, width - width * k, 0),
-    y: clamp(viewport.y, height - height * k, 0),
+    x: clamp(viewport.x, width - width * k - extraX, extraX),
+    y: clamp(viewport.y, height - height * k - extraY, extraY),
   }
+}
+
+export function focusViewport(
+  { x, y, width, height }: { x: number; y: number; width: number; height: number },
+  size: MapSize,
+): Viewport {
+  const k = clamp(Math.min(size.width / width, size.height / height), MIN_ZOOM, MAX_ZOOM)
+  return clampViewport(
+    { k, x: size.width / 2 - (x + width / 2) * k, y: size.height / 2 - (y + height / 2) * k },
+    size,
+  )
 }
 
 /** Zoom multiplicativo mantendo o ponto (cx, cy) fixo na tela. */

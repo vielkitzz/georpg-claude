@@ -1,5 +1,6 @@
 import { getSupabase } from '@/auth/supabase'
 import type { GameRepository } from './repository'
+import { LABELS } from '@/domain/founding/options'
 import { buildIndicators } from '@/domain/nationIndicators'
 import { currencyPrefix, deriveHdi, deriveStability } from '@/domain/nationView'
 import { ARCHETYPES } from '@/domain/ideology'
@@ -15,11 +16,40 @@ const strings = (v: unknown): string[] => Array.isArray(v) ? v.filter((x): x is 
 const numbers = (v: unknown): number[] => Array.isArray(v) ? v.filter((x): x is number => typeof x === 'number' && Number.isFinite(x)) : []
 const optionalNum = (v: unknown): number | undefined => typeof v === 'number' && Number.isFinite(v) ? v : undefined
 const KEYS: IndicatorKey[] = ['legitimacy', 'approval', 'stability', 'gdp', 'inflation', 'unemployment', 'hdi']
+
+function institutionLabel(value: unknown, labels: Record<string, string>) {
+  const label = str(value)
+  return Object.hasOwn(labels, label) ? labels[label] : label
+}
+
+async function resolveNationSymbols(
+  supabase: NonNullable<ReturnType<typeof getSupabase>>,
+  symbols: unknown,
+  ownerId: string,
+): Promise<Nation['symbols']> {
+  const stored = obj(symbols)
+  const resolve = async (value: unknown) => {
+    const source = str(value).trim()
+    const [owner, file, extra] = source.split('/')
+    if (owner === ownerId && extra === undefined && /^[a-f0-9]{64}\.png$/.test(file ?? '')) {
+      try {
+        const { data, error } = await supabase.storage.from('nation-symbols').createSignedUrl(source, 3600)
+        return error ? undefined : data?.signedUrl
+      } catch {
+        return undefined
+      }
+    }
+    if (/^(https?:\/\/|data:image\/)/i.test(source)) return source
+    return undefined
+  }
+  const [flag, coatOfArms] = await Promise.all([resolve(stored.flag), resolve(stored.coatOfArms)])
+  return { flag, coatOfArms }
+}
 /** Lê `{ chave: valor }` guardado no banco, mantendo só as chaves dos indicadores. */
 const byKey = <T>(v: unknown, read: (x: unknown) => T): Partial<Record<IndicatorKey, T>> =>
   Object.fromEntries(KEYS.map(key => [key, read(obj(v)[key])]).filter(([, value]) => value !== undefined))
 
-function mapNation(row: RecordData, modules: RecordData, color: string): Nation {
+function mapNation(row: RecordData, modules: RecordData, color: string, images: Nation['symbols']): Nation {
   const politics = obj(modules.politics)
   const economy = obj(modules.economy)
   const society = obj(modules.society)
@@ -46,11 +76,13 @@ function mapNation(row: RecordData, modules: RecordData, color: string): Nation 
     nationalColor: color, motto: str(row.motto), territoryId: num(row.region_id),
     foundedYear: num(row.founded_year), population: num(economy.population),
     languages: strings(society.languages), religion: str(society.religion),
-    symbols: { flag: str(symbols.flag) || undefined, coatOfArms: str(symbols.coatOfArms) || undefined },
+    symbols: images,
     ideology, ideologyScores: politics.ideologyScores ? politics.ideologyScores as AxisScores : undefined,
     government: {
-      form: str(politics.governmentForm), regime: str(politics.regime),
-      system: str(politics.system), stateForm: str(politics.stateForm),
+      form: institutionLabel(politics.governmentForm, LABELS.governmentForm),
+      regime: institutionLabel(politics.regime ?? row.regime, LABELS.regime),
+      system: institutionLabel(politics.system, LABELS.system),
+      stateForm: institutionLabel(politics.stateForm, LABELS.stateForm),
       firstLevelDivision: str(politics.firstLevel), secondLevelDivision: str(politics.secondLevel),
       localLeaders: str(politics.localSelection),
     },
@@ -102,12 +134,13 @@ export const supabaseRepository: GameRepository = {
       .eq('owner_id', auth.user.id).eq('status', 'active').maybeSingle()
     if (error) throw error
     if (!nation) return null
-    const [{ data: modules, error: modulesError }, { data: claim, error: claimError }] = await Promise.all([
+    const [{ data: modules, error: modulesError }, { data: claim, error: claimError }, images] = await Promise.all([
       supabase.from('nation_modules').select('politics,economy,society').eq('nation_id', nation.id).single(),
       supabase.from('territory_claims').select('color').eq('nation_id', nation.id).maybeSingle(),
+      resolveNationSymbols(supabase, nation.symbols, auth.user.id),
     ])
     if (modulesError || claimError) throw modulesError ?? claimError
-    return mapNation(nation, modules ?? {}, claim?.color ?? '#EA444B')
+    return mapNation(nation, modules ?? {}, claim?.color ?? '#EA444B', images)
   },
   async getTerritoryClaims(): Promise<TerritoryClaim[]> {
     const { data, error } = await client().from('territory_claims').select('territory_id,nation_id,name,color')

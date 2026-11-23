@@ -8,14 +8,10 @@ import { TerritoryMap } from './TerritoryMap'
 export function TerritoryPanel({ nation }: { nation: Nation }) {
   return (
     <NationCard title="Território nacional" subtitle="Sua presença no mundo de Erda.">
-      <TerritoryMap
-        territoryId={nation.territoryId}
-        color={nation.nationalColor}
-        name={nation.shortName}
-      />
+      <TerritoryMap key={nation.territoryId} nation={nation} />
       <Link
         to="/mapa"
-        className="mt-5 inline-flex items-center gap-2 self-start text-sm text-nation-accent hover:underline"
+        className="inline-flex items-center gap-2 self-start text-sm text-nation-accent hover:underline"
       >
         Mapa mundial
         <ExternalLink size={16} aria-hidden />

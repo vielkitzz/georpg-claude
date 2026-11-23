@@ -1,10 +1,10 @@
 import { Info } from 'lucide-react'
-import { cardMood } from '@/domain/indicators'
+import { deltaMood } from '@/domain/indicators'
 import type { Indicator } from '@/domain/types'
 import { Sparkline } from './Sparkline'
 
-const TONE = { good: 'var(--n-positive)', bad: 'var(--n-negative)' } as const
-const MOOD_TEXT = { good: 'sem piora', bad: 'piorou' } as const
+const TONE = { good: 'var(--n-positive)', bad: 'var(--n-negative)', flat: 'var(--n-muted)' }
+const MOOD_TEXT = { good: 'melhorou', bad: 'piorou' }
 
 function Triangle({ down }: { down: boolean }) {
   return (
@@ -22,16 +22,19 @@ export function IndicatorCard({
   indicator: Indicator
   size: 'large' | 'small'
 }) {
-  const mood = cardMood(indicator)
+  const mood = deltaMood(indicator)
   const tone = TONE[mood]
   const large = size === 'large'
   const valueSize = large ? 'text-[56px]' : indicator.key === 'gdp' ? 'text-[26px]' : 'text-[40px]'
 
   return (
     <div
-      className="relative h-[162px] overflow-hidden rounded-[6px] px-4 pt-[18px]"
+      className="relative h-[162px] overflow-hidden rounded-[6px] bg-nation-raised px-4 pt-[18px]"
       style={{
-        background: `linear-gradient(to bottom left, color-mix(in srgb, ${tone} 20%, transparent), transparent), var(--n-raised)`,
+        backgroundImage:
+          mood === 'flat'
+            ? undefined
+            : `linear-gradient(to bottom left, color-mix(in srgb, ${tone} 20%, transparent), transparent)`,
       }}
     >
       <p className="pr-6 text-[11px] leading-4 text-nation-muted uppercase">{indicator.label}</p>
@@ -71,9 +74,15 @@ export function IndicatorCard({
         className="absolute bottom-4 left-4 flex items-center gap-1.5 text-xs"
         style={{ color: tone }}
       >
-        <Triangle down={indicator.delta < 0} />
-        <span>{indicator.deltaText} no último tick</span>
-        <span className="sr-only">({MOOD_TEXT[mood]})</span>
+        {mood === 'flat' ? (
+          <span>Sem variação no último tick</span>
+        ) : (
+          <>
+            <Triangle down={indicator.delta < 0} />
+            <span>{indicator.deltaText} no último tick</span>
+            <span className="sr-only">({MOOD_TEXT[mood]})</span>
+          </>
+        )}
       </p>
     </div>
   )

@@ -1,7 +1,13 @@
 import { supabaseRepository } from './supabaseRepository'
 
-const { getUser, from } = vi.hoisted(() => ({ getUser: vi.fn(), from: vi.fn() }))
-vi.mock('@/auth/supabase', () => ({ getSupabase: () => ({ auth: { getUser }, from }) }))
+const { getUser, from, storageFrom } = vi.hoisted(() => ({
+  getUser: vi.fn(),
+  from: vi.fn(),
+  storageFrom: vi.fn(),
+}))
+vi.mock('@/auth/supabase', () => ({
+  getSupabase: () => ({ auth: { getUser }, from, storage: { from: storageFrom } }),
+}))
 
 const nationRow = {
   id: 'nacao-atual',
@@ -48,6 +54,7 @@ function mockData(nation: unknown, data: unknown) {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       maybeSingle: async () => ({ data: rows[table], error: null }),
+      single: async () => ({ data: rows[table], error: null }),
     }
     return query
   })
@@ -56,6 +63,7 @@ function mockData(nation: unknown, data: unknown) {
 beforeEach(() => {
   getUser.mockReset().mockResolvedValue({ data: { user: { id: 'dono' } }, error: null })
   from.mockReset()
+  storageFrom.mockReset()
 })
 
 it('carrega dados registrados, valores realmente zerados e todas as câmaras', async () => {
@@ -100,4 +108,26 @@ it('devolve ausência quando o jogador não possui uma nação ativa', async () 
   mockData(null, null)
   await expect(supabaseRepository.getNation()).resolves.toBeNull()
   expect(from).toHaveBeenCalledTimes(1)
+})
+
+it('entrega URLs assinadas dos símbolos e o rótulo da forma de governo à página Nação', async () => {
+  const flag = `dono/${'a'.repeat(64)}.png`
+  const coatOfArms = `dono/${'b'.repeat(64)}.png`
+  const createSignedUrl = vi.fn().mockImplementation(async (path: string) => ({
+    data: { signedUrl: `https://storage.example/${path}?token=assinatura` },
+    error: null,
+  }))
+  storageFrom.mockReturnValue({ createSignedUrl })
+  mockData({ ...nationRow, symbols: { flag, coatOfArms } }, modules)
+
+  await expect(supabaseRepository.getNation()).resolves.toMatchObject({
+    government: { form: 'República' },
+    symbols: {
+      flag: `https://storage.example/${flag}?token=assinatura`,
+      coatOfArms: `https://storage.example/${coatOfArms}?token=assinatura`,
+    },
+  })
+  expect(storageFrom).toHaveBeenCalledWith('nation-symbols')
+  expect(createSignedUrl).toHaveBeenCalledWith(flag, 3600)
+  expect(createSignedUrl).toHaveBeenCalledWith(coatOfArms, 3600)
 })

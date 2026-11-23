@@ -10,7 +10,7 @@ import {
   splitOfficialName,
 } from './nationView'
 import { buildIndicators } from './nationIndicators'
-import { cardMood } from './indicators'
+import { deltaMood } from './indicators'
 
 describe('nome e fundação', () => {
   it('destaca só o nome do país', () => {
@@ -109,10 +109,10 @@ describe('indicadores', () => {
     expect(indicators[6].value).toBe('0,612')
   })
 
-  it('sem variação, o cartão fica verde', () => {
-    expect(cardMood({ delta: 0 })).toBe('good')
-    expect(cardMood({ delta: 0, lowerIsBetter: true })).toBe('good')
-    expect(cardMood({ delta: 0.3, lowerIsBetter: true })).toBe('bad')
-    expect(cardMood({ delta: -1 })).toBe('bad')
+  it('variação zero é neutra, inclusive em indicadores em que cair é melhora', () => {
+    expect(deltaMood({ delta: 0 })).toBe('flat')
+    expect(deltaMood({ delta: 0, lowerIsBetter: true })).toBe('flat')
+    expect(deltaMood({ delta: 0.3, lowerIsBetter: true })).toBe('bad')
+    expect(deltaMood({ delta: -1 })).toBe('bad')
   })
 })

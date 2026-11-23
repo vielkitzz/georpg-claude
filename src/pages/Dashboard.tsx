@@ -55,7 +55,7 @@ function Overview({ nation }: { nation: Nation }) {
         <NationHero nation={nation} ideologyName={ideology?.name} />
 
         <NationCard title="Indicadores" divider action={<SeeMore />}>
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-8">
             <div className="grid gap-6 @min-[800px]:grid-cols-3">
               {large.map((indicator) => (
                 <IndicatorCard key={indicator.key} indicator={indicator} size="large" />
@@ -69,12 +69,12 @@ function Overview({ nation }: { nation: Nation }) {
           </div>
         </NationCard>
 
-        <div className="grid gap-x-6 gap-y-8 @min-[900px]:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="grid gap-8 @min-[900px]:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <BasicInfoPanel nation={nation} area={area} divisions={divisions} />
           <AttentionPanel alerts={nation.alerts} tickIndex={tickIndex} />
         </div>
 
-        <div className="grid gap-x-6 gap-y-8 @min-[900px]:grid-cols-2">
+        <div className="grid gap-8 @min-[900px]:grid-cols-2">
           <TerritoryPanel nation={nation} />
           <IdeologyPanel ideology={ideology} />
         </div>
