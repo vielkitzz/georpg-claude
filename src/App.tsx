@@ -58,6 +58,12 @@ function AppRoutes() {
               return (
                 <Route key={id} path={path}>
                   <Route index element={<Page />} />
+                  {id === 'indicators' && (
+                    <>
+                      <Route path=":section" element={<IndicatorsPage />} />
+                      <Route path="metrica/:metric" element={<IndicatorsPage />} />
+                    </>
+                  )}
                   {children?.map((page) => (
                     <Route
                       key={page.id}

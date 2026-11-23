@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react'
 import { matchPath, NavLink, useLocation } from 'react-router'
+import { INDICATOR_LINKS } from '@/domain/indicatorNavigation'
 import { NAV_ITEMS, type NavId, type NavItem } from '@/domain/nav'
 import { Brand } from './Brand'
 import { NAV_ICONS } from './navIcons'
@@ -109,6 +110,26 @@ function MenuLinks({
                   </button>
                 )}
               </div>
+              {item.id === 'indicators' && activeSection && (
+                <ul
+                  className={`my-1 space-y-0.5 border-l border-line pl-1 ${compact ? 'ml-5 hidden lg:block' : 'ml-5'}`}
+                >
+                  {INDICATOR_LINKS.map(({ path, label }) => (
+                    <li key={path}>
+                      <NavLink
+                        to={path}
+                        end
+                        onClick={select}
+                        className={({ isActive }) =>
+                          `block rounded-md border-l-2 px-2 py-2 text-sm ${linkColor(isActive)}`
+                        }
+                      >
+                        {label}
+                      </NavLink>
+                    </li>
+                  ))}
+                </ul>
+              )}
               {item.children && (
                 <div
                   id={submenuId}

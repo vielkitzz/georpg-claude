@@ -2,7 +2,7 @@ import { getSupabase } from '@/auth/supabase'
 import type { GameRepository } from './repository'
 import { LABELS } from '@/domain/founding/options'
 import { buildIndicators } from '@/domain/nationIndicators'
-import { currencyPrefix, deriveHdi, deriveStability } from '@/domain/nationView'
+import { currencyPrefix, deriveHdi } from '@/domain/nationView'
 import { ARCHETYPES } from '@/domain/ideology'
 import type { ArchetypeId, AxisScores } from '@/domain/ideology'
 import type { IndicatorKey, Nation, TerritoryClaim } from '@/domain/types'
@@ -65,7 +65,7 @@ function mapNation(row: RecordData, modules: RecordData, color: string, images: 
   const indicators = buildIndicators({
     currencyPrefix: currencyPrefix(currency),
     legitimacy, approval, inflation, unemployment, gdp: num(economy.gdp),
-    stability: optionalNum(society.stability) ?? deriveStability({ legitimacy, approval, inflation, unemployment }),
+    stability: optionalNum(society.stability),
     hdi: optionalNum(society.hdi) ?? deriveHdi(num(economy.gdpPerCapita)),
     history: byKey(society.history, numbers),
     deltas: byKey(society.deltas, optionalNum),

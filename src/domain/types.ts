@@ -27,6 +27,8 @@ export interface Indicator {
   history: number[]
   /** Explicação curta do indicador. */
   info: string
+  /** Indicadores usados no cálculo do valor atual, quando conhecidos. */
+  inputs?: readonly IndicatorKey[]
 }
 
 export interface Minister {

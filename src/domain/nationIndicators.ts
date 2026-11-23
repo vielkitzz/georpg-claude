@@ -1,4 +1,4 @@
-import { formatDecimal, formatMagnitude } from '@/domain/nationView'
+import { deriveStability, formatDecimal, formatMagnitude } from '@/domain/nationView'
 import type { Indicator, IndicatorKey } from '@/domain/types'
 
 export interface IndicatorInputs {
@@ -6,7 +6,7 @@ export interface IndicatorInputs {
   currencyPrefix: string
   legitimacy: number
   approval: number
-  stability: number
+  stability?: number
   gdp: number
   inflation: number
   unemployment: number
@@ -19,6 +19,7 @@ export interface IndicatorInputs {
 
 /** Os sete indicadores da visão geral, na ordem em que aparecem: três grandes e quatro menores. */
 export function buildIndicators(input: IndicatorInputs): Indicator[] {
+  const stability = input.stability ?? deriveStability(input)
   const delta = (key: IndicatorKey) => input.deltas?.[key] ?? 0
   const history = (key: IndicatorKey, current: number) => {
     const past = input.history?.[key]
@@ -53,11 +54,15 @@ export function buildIndicators(input: IndicatorInputs): Indicator[] {
       key: 'stability',
       label: 'Estabilidade',
       caption: 'Política · risco de crise',
-      value: String(Math.round(input.stability)),
+      value: String(Math.round(stability)),
       unit: '/ 100',
       delta: delta('stability'),
       deltaText: points('stability'),
-      history: history('stability', input.stability),
+      history: history('stability', stability),
+      inputs:
+        input.stability === undefined
+          ? ['legitimacy', 'approval', 'inflation', 'unemployment']
+          : undefined,
       info: 'Quanto maior, menor o risco de uma crise política.',
     },
     {

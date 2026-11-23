@@ -1,0 +1,58 @@
+.indicator-board {
+  display: grid;
+  gap: 1rem;
+  align-items: start;
+}
+
+.indicator-page section {
+  container-type: inline-size;
+}
+
+.indicator-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.125rem 0.75rem;
+}
+
+.indicator-mini {
+  display: none;
+}
+
+.indicator-value,
+.indicator-change {
+  grid-column: 2;
+  text-align: end;
+}
+
+.indicator-change:empty {
+  display: none;
+}
+
+.indicator-network {
+  display: grid;
+  background-image: radial-gradient(var(--line) 1px, transparent 1px);
+  background-size: 14px 14px;
+}
+
+@container (min-width: 21rem) {
+  .indicator-row {
+    grid-template-columns: minmax(0, 1fr) 3rem minmax(5rem, auto) minmax(3rem, auto);
+  }
+
+  .indicator-mini,
+  .indicator-change:empty {
+    display: block;
+  }
+
+  .indicator-value,
+  .indicator-change {
+    grid-column: auto;
+  }
+}
+
+@media (min-width: 64rem) {
+  .indicator-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

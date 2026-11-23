@@ -1,5 +1,5 @@
 import { buildIndicators } from '@/domain/nationIndicators'
-import { currencyPrefix, deriveHdi, deriveStability } from '@/domain/nationView'
+import { currencyPrefix, deriveHdi } from '@/domain/nationView'
 import type { Nation, TerritoryClaim, WorldState } from '@/domain/types'
 
 /** Dados de demonstração da Fase 0 (nação "Teste"). Nada daqui vem do servidor. */
@@ -46,7 +46,6 @@ export const DEMO_NATION: Nation = {
     currencyPrefix: currencyPrefix(DEMO_CURRENCY),
     legitimacy: 62,
     approval: 58,
-    stability: deriveStability({ legitimacy: 62, approval: 58, inflation: 3.1, unemployment: 7.4 }),
     gdp: 310_000_000,
     inflation: 3.1,
     unemployment: 7.4,
