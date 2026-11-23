@@ -1,34 +1,58 @@
-const SIZE = 180
+const SIZE = 150
 const HALF = SIZE / 2
-const CELL = 30
+const CELL = 25
 
-/** Bússola política: x = mercado (0 Estado, 100 mercado), y = autoridade (0 liberdade, 100 autoridade). */
-export function PoliticalCompass({ x, y }: { x: number; y: number }) {
+/** Bússola política: x = mercado, y = autoridade. */
+export function PoliticalCompass({
+  x,
+  y,
+}: {
+  x: number
+  y: number
+}) {
   const cx = (x / 100) * SIZE
   const cy = (1 - y / 100) * SIZE
-  // O quadrante onde a nação está ganha o tom de destaque.
+
   const activeCol = x >= 50 ? 1 : 0
   const activeRow = y >= 50 ? 0 : 1
+
   const quadrants = [
     { col: 0, row: 0, fill: 'var(--n-quad-a)' },
     { col: 1, row: 0, fill: 'var(--n-quad-a)' },
     { col: 0, row: 1, fill: 'var(--n-quad-b)' },
     { col: 1, row: 1, fill: 'var(--n-quad-c)' },
   ]
+
   const lines = [1, 2, 4, 5].map((n) => n * CELL)
 
+
   return (
-    <div className="flex w-[180px] flex-col gap-2 text-[10px] tracking-[0.12em] text-nation-subtle uppercase">
-      <span className="text-center">Autoridade</span>
+    <div className="grid w-[178px] shrink-0 grid-cols-[14px_150px_14px] grid-rows-[18px_150px_18px] items-center text-[9px] leading-none tracking-[0.08em] text-nation-subtle uppercase">
+
+      {/* Autoridade — superior */}
+      <span className="col-start-2 row-start-1 text-center">
+        Autoridade
+      </span>
+
+      {/* Estado — esquerda, 90° */}
+      <span className="col-start-1 row-start-2 flex h-full items-center justify-center">
+        <span className="rotate-90 whitespace-nowrap">
+          Estado
+        </span>
+      </span>
+
+      {/* Bússola */}
       <svg
         viewBox={`0 0 ${SIZE} ${SIZE}`}
         role="img"
         aria-label={`Bússola política: mercado ${Math.round(x)} de 100 e autoridade ${Math.round(y)} de 100`}
-        className="block size-[180px] overflow-visible"
+        className="col-start-2 row-start-2 block size-[150px]"
       >
         <rect width={SIZE} height={SIZE} fill="var(--n-compass)" rx={2} />
+
         {quadrants.map(({ col, row, fill }) => {
           const active = col === activeCol && row === activeRow
+
           return (
             <g key={`${col}${row}`}>
               <rect
@@ -38,6 +62,7 @@ export function PoliticalCompass({ x, y }: { x: number; y: number }) {
                 height={HALF}
                 fill={active ? 'var(--n-quad-active)' : fill}
               />
+
               {active && (
                 <rect
                   x={col * HALF}
@@ -51,16 +76,19 @@ export function PoliticalCompass({ x, y }: { x: number; y: number }) {
             </g>
           )
         })}
+
         {lines.map((n) => (
           <g key={n} stroke="var(--n-grid)" strokeOpacity={0.3}>
             <line x1={n} x2={n} y1={0} y2={SIZE} />
             <line y1={n} y2={n} x1={0} x2={SIZE} />
           </g>
         ))}
+
         <g stroke="var(--n-grid)">
           <line x1={HALF} x2={HALF} y1={0} y2={SIZE} />
           <line y1={HALF} y2={HALF} x1={0} x2={SIZE} />
         </g>
+
         <rect
           x={0.5}
           y={0.5}
@@ -70,13 +98,28 @@ export function PoliticalCompass({ x, y }: { x: number; y: number }) {
           fill="none"
           stroke="var(--n-divider)"
         />
-        <circle cx={cx} cy={cy} r={8} fill="var(--n-negative)" stroke="#fff" strokeWidth={2} />
+
+        <circle
+          cx={cx}
+          cy={cy}
+          r={7}
+          fill="var(--n-negative)"
+          stroke="#fff"
+          strokeWidth={2}
+        />
       </svg>
-      <div className="flex justify-between">
-        <span>Estado</span>
-        <span>Mercado</span>
-      </div>
-      <span className="text-center">Liberdade</span>
+
+      {/* Mercado — direita, -90° */}
+      <span className="col-start-3 row-start-2 flex h-full items-center justify-center">
+        <span className="-rotate-90 whitespace-nowrap">
+          Mercado
+        </span>
+      </span>
+
+      {/* Liberdade — inferior */}
+      <span className="col-start-2 row-start-3 text-center">
+        Liberdade
+      </span>
     </div>
   )
 }
