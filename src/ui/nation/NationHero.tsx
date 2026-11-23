@@ -23,6 +23,9 @@ const ideologyTags: Partial<Record<ArchetypeId, TagStyle>> = {
   teocrata: theocracyTag,
 }
 const defaultIdeologyTag = { icon: Flame, color: '#F5A524' }
+const SYMBOL_HEIGHT = 116
+
+type SymbolSize = { source: string; ratio: number }
 
 function Chip({ icon: Icon, color, children }: TagStyle & { children: string }) {
   return (
@@ -51,24 +54,33 @@ function Symbol({
   src,
   label,
   fallback: Fallback,
+  ratio,
+  onSize,
 }: {
   src?: string
   label: string
   fallback: LucideIcon
+  ratio: number
+  onSize: (size: SymbolSize) => void
 }) {
   const [failedSource, setFailedSource] = useState<string>()
   return (
     <figure className="m-0 flex min-w-0 flex-col items-center gap-3">
-      <div className="grid h-[116px] w-full place-items-center">
+      <div className="relative w-full" style={{ aspectRatio: ratio }}>
         {src && src !== failedSource ? (
           <img
             src={src}
             alt={label}
             onError={() => setFailedSource(src)}
-            className="size-full object-contain"
+            onLoad={({ currentTarget: { naturalWidth, naturalHeight } }) => {
+              if (naturalWidth && naturalHeight) {
+                onSize({ source: src, ratio: naturalWidth / naturalHeight })
+              }
+            }}
+            className="absolute inset-0 size-full object-contain"
           />
         ) : (
-          <span className="grid size-full place-items-center rounded-[2px] border border-dashed border-nation-line text-nation-subtle">
+          <span className="absolute inset-0 grid place-items-center rounded-[2px] border border-dashed border-nation-line text-nation-subtle">
             <Fallback size={28} aria-hidden />
             <span className="sr-only">{label} indisponível</span>
           </span>
@@ -83,6 +95,12 @@ function Symbol({
 
 /** Cabeçalho da nação: bandeira, brasão, nome oficial, lema e as três marcas do governo. */
 export function NationHero({ nation, ideologyName }: { nation: Nation; ideologyName?: string }) {
+  const [flagSize, setFlagSize] = useState<SymbolSize>()
+  const [coatSize, setCoatSize] = useState<SymbolSize>()
+  const { flag, coatOfArms } = nation.symbols
+  const flagRatio = flagSize && flagSize.source === flag ? flagSize.ratio : 164 / SYMBOL_HEIGHT
+  const coatRatio =
+    coatSize && coatSize.source === coatOfArms ? coatSize.ratio : 121 / SYMBOL_HEIGHT
   const { prefix, core } = splitOfficialName(nation.officialName, nation.shortName)
   const color = nation.nationalColor
   const form = nation.government.form
@@ -107,9 +125,27 @@ export function NationHero({ nation, ideologyName }: { nation: Nation; ideologyN
           <p className="text-[10px] tracking-[0.18em] text-nation-subtle uppercase">
             Símbolos nacionais
           </p>
-          <div className="mt-5 grid w-full max-w-[305px] grid-cols-[164fr_121fr] items-start gap-5 @min-[860px]:w-[305px]">
-            <Symbol src={nation.symbols.flag} label="Bandeira" fallback={Flag} />
-            <Symbol src={nation.symbols.coatOfArms} label="Brasão de armas" fallback={Shield} />
+          <div
+            className="mt-5 grid max-w-[min(100%,305px)] items-start gap-5"
+            style={{
+              width: `calc(${SYMBOL_HEIGHT * (flagRatio + coatRatio)}px + 1.25rem)`,
+              gridTemplateColumns: `minmax(0, ${flagRatio}fr) minmax(0, ${coatRatio}fr)`,
+            }}
+          >
+            <Symbol
+              src={flag}
+              label="Bandeira"
+              fallback={Flag}
+              ratio={flagRatio}
+              onSize={setFlagSize}
+            />
+            <Symbol
+              src={coatOfArms}
+              label="Brasão de armas"
+              fallback={Shield}
+              ratio={coatRatio}
+              onSize={setCoatSize}
+            />
           </div>
         </div>
 

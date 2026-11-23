@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { DEMO_NATION, DEMO_WORLD } from '@/data/demo'
 import { RepositoryProvider } from '@/data/RepositoryProvider'
@@ -29,13 +29,19 @@ it('mostra os símbolos, as etiquetas do anexo e os indicadores estáveis na vis
   )
 
   const hero = await screen.findByRole('region', { name: 'Identidade da nação' })
-  expect(within(hero).getByRole('img', { name: 'Bandeira' })).toHaveAttribute(
-    'src',
-    nation.symbols.flag,
-  )
-  expect(within(hero).getByRole('img', { name: 'Brasão de armas' })).toHaveAttribute(
-    'src',
-    coatOfArms,
+  const flag = within(hero).getByRole('img', { name: 'Bandeira' })
+  const coat = within(hero).getByRole('img', { name: 'Brasão de armas' })
+  expect(flag).toHaveAttribute('src', nation.symbols.flag)
+  expect(coat).toHaveAttribute('src', coatOfArms)
+
+  Object.defineProperties(flag, { naturalWidth: { value: 300 }, naturalHeight: { value: 100 } })
+  Object.defineProperties(coat, { naturalWidth: { value: 50 }, naturalHeight: { value: 100 } })
+  fireEvent.load(flag)
+  fireEvent.load(coat)
+  expect(flag.parentElement?.style.aspectRatio).toBe('3 / 1')
+  expect(coat.parentElement?.style.aspectRatio).toBe('0.5 / 1')
+  expect(flag.closest('figure')?.parentElement?.style.gridTemplateColumns).toBe(
+    'minmax(0px, 3fr) minmax(0px, 0.5fr)',
   )
   expect(within(hero).getByText('República').querySelector('use')).toHaveAttribute(
     'href',
